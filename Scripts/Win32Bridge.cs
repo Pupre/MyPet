@@ -93,8 +93,20 @@ public class Win32Bridge : MonoBehaviour
             DwmExtendFrameIntoClientArea(_hWnd, ref margins);
 
             // 추가적으로 Alpha 레이어 속성 설정 (필요한 경우)
-            SetLayeredWindowAttributes(_hWnd, 0, 255, LWA_ALPHA);
+            // SetLayeredWindowAttributes(_hWnd, 0, 255, LWA_ALPHA);
         }
+        #endif
+    }
+
+    public void SetColorKey(Color32 color)
+    {
+        #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+        // 0x00BBGGRR 형식의 COLORREF 생성
+        uint colorRef = (uint)((color.b << 16) | (color.g << 8) | color.r);
+        
+        // 레이어드 윈도우 속성 설정 (LWA_COLORKEY)
+        // 이 함수는 해당 색상을 완전히 투명하게 만듭니다.
+        SetLayeredWindowAttributes(_hWnd, colorRef, 0, LWA_COLORKEY);
         #endif
     }
 
