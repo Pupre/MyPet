@@ -40,14 +40,23 @@ public class Win32Bridge : MonoBehaviour
     public static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS margins);
 
     [DllImport("user32.dll")]
+    public static extern bool SetLayeredWindowAttributes(IntPtr hWnd, uint crKey, byte bAlpha, uint dwFlags);
+
+    [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll")]
     public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
     public const int GWL_EXSTYLE = -20;
+    public const int GWL_STYLE = -16;
     public const uint WS_EX_LAYERED = 0x00080000;
     public const uint WS_EX_TRANSPARENT = 0x00000020;
+    public const uint LWA_COLORKEY = 0x00000001;
+    public const uint LWA_ALPHA = 0x00000002;
+    public const uint WS_POPUP = 0x80000000;
+    public const uint WS_VISIBLE = 0x10000000;
+
     public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
 
     public const uint SWP_NOMOVE = 0x0002;
@@ -71,8 +80,20 @@ public class Win32Bridge : MonoBehaviour
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
         if (enabled)
         {
+            // 스타일을 POPUP으로 변경하여 테두리 제거 (선택 사항이나 투명화에 도움됨)
+            // uint style = GetWindowLong(_hWnd, -16); // GWL_STYLE
+            // SetWindowLong(_hWnd, -16, WS_POPUP | WS_VISIBLE);
+
+            // Layered 스타일 강제 적용
+            uint exStyle = GetWindowLong(_hWnd, GWL_EXSTYLE);
+            SetWindowLong(_hWnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
+
+            // DWM 확장 (Windows 10/11 가시 투명화의 핵심)
             MARGINS margins = new MARGINS { cxLeftWidth = -1 };
             DwmExtendFrameIntoClientArea(_hWnd, ref margins);
+
+            // 추가적으로 Alpha 레이어 속성 설정 (필요한 경우)
+            SetLayeredWindowAttributes(_hWnd, 0, 255, LWA_ALPHA);
         }
         #endif
     }
