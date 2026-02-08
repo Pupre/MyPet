@@ -32,6 +32,35 @@ public class PetOverlayController : MonoBehaviour
         #endif
     }
 
+    void Update()
+    {
+        #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+        DetectMouseInteraction();
+        #endif
+    }
+
+    void DetectMouseInteraction()
+    {
+        // 마우스 위치로 레이캐스트
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        // 펫(Collider가 있는 객체)이 마우스 아래에 있는지 확인
+        bool isHovering = Physics.Raycast(ray, out hit, 100f);
+
+        // 상태가 바뀔 때만 API 호출 (성능 최적화)
+        if (isHovering && isClickThrough)
+        {
+            isClickThrough = false; // 상호작용 모드 (클릭 받음)
+            UpdateClickThrough();
+        }
+        else if (!isHovering && !isClickThrough)
+        {
+            isClickThrough = true; // 통과 모드 (배경 클릭 가능)
+            UpdateClickThrough();
+        }
+    }
+
     void ForceApplySettings()
     {
         Win32Bridge.Instance.SetTransparency(true);
