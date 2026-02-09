@@ -10,8 +10,8 @@ public class PetGrowthController : MonoBehaviour
     
     [Header("Visual Settings")]
     public Transform petModel;
-    public float stage0Scale = 0.1f;
-    public float stage5Scale = 1.0f;
+    public float stage0Scale = 1.0f; // 테스트를 위해 1.0으로 상향
+    public float stage5Scale = 2.5f;
 
     void Awake()
     {
