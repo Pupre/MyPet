@@ -60,13 +60,23 @@ public class PetOverlayController : MonoBehaviour
             UpdateClickThrough();
         }
 
-        // 클릭 시 밥 주기 (Phase 1 성장 시스템 연동)
+        // --- 롱프레스 및 방사형 메뉴 연동 ---
         if (isHovering && Input.GetMouseButtonDown(0))
         {
-            if (PetGrowthController.Instance != null)
-            {
-                PetGrowthController.Instance.TryFeed();
-            }
+            if (RadialMenuController.Instance != null)
+                RadialMenuController.Instance.StartLongPress();
+        }
+        
+        if (Input.GetMouseButton(0))
+        {
+            if (RadialMenuController.Instance != null)
+                RadialMenuController.Instance.UpdateLongPress(Input.mousePosition);
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            if (RadialMenuController.Instance != null)
+                RadialMenuController.Instance.CancelLongPress();
         }
     }
 
