@@ -8,6 +8,7 @@ public class PetMovement : MonoBehaviour
 
     [Header("Random Movement")]
     public bool useRandomMovement = true;
+    public bool isLocked = false; // 상호작용 중 이동 정지용
     public float changeTargetInterval = 3.0f;
     private Vector3 _randomTarget;
     private float _timer;
@@ -19,6 +20,8 @@ public class PetMovement : MonoBehaviour
 
     void Update()
     {
+        if (isLocked) return; // 꾹 누르고 있을 때는 정지
+
         Vector3 destination;
 
         if (useRandomMovement)
