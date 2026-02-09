@@ -59,6 +59,15 @@ public class PetOverlayController : MonoBehaviour
             isClickThrough = true; // 통과 모드 (배경 클릭 가능)
             UpdateClickThrough();
         }
+
+        // 클릭 시 밥 주기 (Phase 1 성장 시스템 연동)
+        if (isHovering && Input.GetMouseButtonDown(0))
+        {
+            if (PetGrowthController.Instance != null)
+            {
+                PetGrowthController.Instance.TryFeed();
+            }
+        }
     }
 
     void ForceApplySettings()
