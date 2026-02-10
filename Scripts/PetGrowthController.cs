@@ -10,8 +10,14 @@ public class PetGrowthController : MonoBehaviour
     
     [Header("Visual Settings")]
     public Transform petModel;
-    public float stage0Scale = 1.0f; // 테스트를 위해 1.0으로 상향
-    public float stage5Scale = 2.5f;
+    public float stage0Scale = 1.5f; // 테스트를 위해 더 상향 (1.0 -> 1.5)
+    public float stage5Scale = 3.0f;
+
+    [Header("Time Settings")]
+    public int resetHour = 6; // 매일 오전 6시 초기화
+
+    [Header("Time Settings")]
+    public int resetHour = 6; // 매일 오전 6시 초기화
 
     void Awake()
     {
@@ -40,10 +46,16 @@ public class PetGrowthController : MonoBehaviour
     public bool TryFeed()
     {
         DateTime now = DateTime.Now;
-        TimeSpan elapsed = now - currentData.LastFeedTime;
+        
+        // 현재 시각 기준 가장 최근의 오전 6시 구하기
+        DateTime lastResetTime = new DateTime(now.Year, now.Month, now.Day, resetHour, 0, 0);
+        if (now.Hour < resetHour)
+        {
+            lastResetTime = lastResetTime.AddDays(-1);
+        }
 
-        // 24시간 체크
-        if (elapsed.TotalHours >= 24)
+        // 마지막 밥 준 시간이 최근 초기화 시간보다 이전이면 밥 주기 가능
+        if (currentData.LastFeedTime < lastResetTime)
         {
             currentData.LastFeedTime = now;
             AddGrowth(growthRatePerFeed);
@@ -51,7 +63,10 @@ public class PetGrowthController : MonoBehaviour
             return true;
         }
 
-        Debug.Log($"아직 배가 부릅니다. 다음 식사 가능 시간까지: {24 - elapsed.TotalHours:F1}시간");
+        // 다음에 밥 줄 수 있는 시간 계산
+        DateTime nextResetTime = lastResetTime.AddDays(1);
+        TimeSpan waitTime = nextResetTime - now;
+        Debug.Log($"이미 밥을 먹었습니다. 오전 {resetHour}시 초기화까지 {waitTime.Hours}시간 {waitTime.Minutes}분 남았습니다.");
         return false;
     }
 
@@ -85,9 +100,10 @@ public class PetGrowthController : MonoBehaviour
         float targetScale = Mathf.Lerp(stage0Scale, stage5Scale, t);
         
         // 현재 단계 내부에서의 미세한 성장 반영 (Progress)
-        float progressBonus = (currentData.growthProgress / 100f) * ((stage5Scale - stage0Scale) / 5f);
-        
-        petModel.localScale = Vector3.one * (targetScale + progressBonus);
+        float finalScale = targetScale + progressBonus;
+        petModel.localScale = Vector3.one * finalScale;
+
+        Debug.Log($"[Scale Debug] 현재 단계: {currentData.currentStage}, 적용 스케일: {finalScale}");
 
         // TODO: 나중에 단계별 메시(Mesh) 교체 로직 추가
     }

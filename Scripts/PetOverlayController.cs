@@ -2,7 +2,15 @@ using UnityEngine;
 
 public class PetOverlayController : MonoBehaviour
 {
+    public static PetOverlayController Instance { get; private set; }
     public bool isClickThrough = true;
+    private PetMovement _petMovement;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        _petMovement = GetComponent<PetMovement>();
+    }
 
     void Start()
     {
