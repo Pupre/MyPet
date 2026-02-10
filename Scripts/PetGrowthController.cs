@@ -6,18 +6,15 @@ public class PetGrowthController : MonoBehaviour
     public static PetGrowthController Instance { get; private set; }
 
     public PetData currentData;
-    public float growthRatePerFeed = 20f; // 밥 한 번에 쌓이는 성장률 (%)
     
+    // 이펙터 수정을 방지하기 위해 상수로 하드코딩
+    private const float GrowthRatePerFeed = 100f; // 밥 한 번에 100% 성장 (테스트 모드)
+    private const float Stage0Scale = 1.5f; 
+    private const float Stage5Scale = 3.0f;
+    private const int ResetHour = 6; // 매일 오전 6시 초기화 (KST)
+
     [Header("Visual Settings")]
     public Transform petModel;
-    public float stage0Scale = 1.5f; // 테스트를 위해 더 상향 (1.0 -> 1.5)
-    public float stage5Scale = 3.0f;
-
-    [Header("Time Settings")]
-    public int resetHour = 6; // 매일 오전 6시 초기화
-
-    [Header("Time Settings")]
-    public int resetHour = 6; // 매일 오전 6시 초기화
 
     void Awake()
     {
@@ -48,8 +45,8 @@ public class PetGrowthController : MonoBehaviour
         DateTime now = DateTime.Now;
         
         // 현재 시각 기준 가장 최근의 오전 6시 구하기
-        DateTime lastResetTime = new DateTime(now.Year, now.Month, now.Day, resetHour, 0, 0);
-        if (now.Hour < resetHour)
+        DateTime lastResetTime = new DateTime(now.Year, now.Month, now.Day, ResetHour, 0, 0);
+        if (now.Hour < ResetHour)
         {
             lastResetTime = lastResetTime.AddDays(-1);
         }
@@ -58,15 +55,15 @@ public class PetGrowthController : MonoBehaviour
         if (currentData.LastFeedTime < lastResetTime)
         {
             currentData.LastFeedTime = now;
-            AddGrowth(growthRatePerFeed);
+            AddGrowth(GrowthRatePerFeed);
             Debug.Log("펫에게 밥을 주었습니다! 성장이 진행됩니다.");
             return true;
         }
 
-        // 다음에 밥 줄 수 있는 시간 계산
+        // 다음에 밥 줄 수 있는 시간 계산 (디버그용)
         DateTime nextResetTime = lastResetTime.AddDays(1);
         TimeSpan waitTime = nextResetTime - now;
-        Debug.Log($"이미 밥을 먹었습니다. 오전 {resetHour}시 초기화까지 {waitTime.Hours}시간 {waitTime.Minutes}분 남았습니다.");
+        Debug.Log($"이미 밥을 먹었습니다. 오전 {ResetHour}시 초기화까지 {waitTime.Hours}시간 {waitTime.Minutes}분 남았습니다.");
         return false;
     }
 
@@ -74,6 +71,7 @@ public class PetGrowthController : MonoBehaviour
     {
         currentData.growthProgress += amount;
 
+        // 성장률이 100%를 넘으면 단계 상승
         if (currentData.growthProgress >= 100f && currentData.currentStage < 5)
         {
             LevelUp();
@@ -94,25 +92,26 @@ public class PetGrowthController : MonoBehaviour
     {
         if (petModel == null) petModel = this.transform;
 
-        // 단계에 따른 스케일 계산 (점진적 성장)
-        // 0단계 -> stage0Scale, 5단계 -> stage5Scale
+        // 1. 현재 단계(Stage)에 따른 기본 스케일 계산
         float t = (float)currentData.currentStage / 5f;
-        float targetScale = Mathf.Lerp(stage0Scale, stage5Scale, t);
+        float baseScale = Mathf.Lerp(Stage0Scale, Stage5Scale, t);
         
-        // 현재 단계 내부에서의 미세한 성장 반영 (Progress)
-        float finalScale = targetScale + progressBonus;
+        // 2. 현재 단계 내의 진행도(Progress)에 따른 미세 성장분 계산
+        float scaleStep = (Stage5Scale - Stage0Scale) / 5f;
+        float progressBonus = (currentData.growthProgress / 100f) * scaleStep;
+        
+        float finalScale = baseScale + progressBonus;
         petModel.localScale = Vector3.one * finalScale;
 
-        Debug.Log($"[Scale Debug] 현재 단계: {currentData.currentStage}, 적용 스케일: {finalScale}");
+        Debug.Log($"[성장 로그] 현재 단계: {currentData.currentStage}, 성장률: {currentData.growthProgress}%, 최종 스케일: {finalScale}");
 
         // TODO: 나중에 단계별 메시(Mesh) 교체 로직 추가
     }
 
-    // 테스트용: 강제 성장 버튼 등에서 호출
     [ContextMenu("Debug Feed")]
     public void DebugFeed()
     {
-        currentData.LastFeedTime = DateTime.MinValue; // 쿨타임 초기화
+        currentData.LastFeedTime = DateTime.MinValue; 
         TryFeed();
     }
 }
