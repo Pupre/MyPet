@@ -17,7 +17,17 @@ public class PetDefinition : ScriptableObject
 public class PetStageInfo
 {
     public int stageNumber;
+    
+    [Header("3D Visuals")]
     public GameObject modelPrefab;
     public RuntimeAnimatorController animatorController;
+    
+    [Header("2D Visuals (Optional)")]
+    public bool is2D = true;
+    public Texture2D idleSpriteSheet;
+    public Texture2D moveSpriteSheet;
+    public int frameCount = 4; // 기본 4프레임
+    
+    [Header("Common")]
     public float baseScale = 1.0f;
 }
