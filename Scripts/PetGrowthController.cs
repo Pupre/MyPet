@@ -9,8 +9,8 @@ public class PetGrowthController : MonoBehaviour
     
     // 이펙터 수정을 방지하기 위해 상수로 하드코딩
     private const float GrowthRatePerFeed = 100f; // 밥 한 번에 100% 성장 (테스트 모드)
-    private const float Stage0Scale = 1.5f; 
-    private const float Stage5Scale = 3.0f;
+    private const float Stage0Scale = 0.5f; // 시작은 조금 작게 (1.5 -> 1.0)
+    private const float Stage5Scale = 5.0f; // 최대치는 훨씬 크게 (3.0 -> 5.0)
     private const int ResetHour = 6; // 매일 오전 6시 초기화 (KST)
 
     [Header("Visual Settings")]
@@ -90,13 +90,17 @@ public class PetGrowthController : MonoBehaviour
 
     public void ApplyGrowthVisuals()
     {
+        // 1. 비주얼 매니저에게 모델 갱신 요청 (새로운 시스템)
+        if (PetVisualManager.Instance != null)
+        {
+            PetVisualManager.Instance.RefreshVisuals();
+        }
+
         if (petModel == null) petModel = this.transform;
 
-        // 1. 현재 단계(Stage)에 따른 기본 스케일 계산
+        // 2. 현재 단계(Stage)와 진행도에 따른 미세 스케일 조정 (기존 로직 유지)
         float t = (float)currentData.currentStage / 5f;
         float baseScale = Mathf.Lerp(Stage0Scale, Stage5Scale, t);
-        
-        // 2. 현재 단계 내의 진행도(Progress)에 따른 미세 성장분 계산
         float scaleStep = (Stage5Scale - Stage0Scale) / 5f;
         float progressBonus = (currentData.growthProgress / 100f) * scaleStep;
         

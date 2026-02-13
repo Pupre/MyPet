@@ -799,10 +799,7 @@ MonoBehaviour:
     growthProgress: 0
     affectionLevel: 0
     lastFeedTimeStr: "0001-01-01 \uC624\uC804 12:00:00"
-  growthRatePerFeed: 20
   petModel: {fileID: 1040170629}
-  stage0Scale: 0.1
-  stage5Scale: 1
 --- !u!114 &1040170631
 MonoBehaviour:
   m_ObjectHideFlags: 0
