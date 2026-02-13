@@ -117,7 +117,8 @@ public class Win32Bridge : MonoBehaviour
         if (enabled)
             SetWindowLong(_hWnd, GWL_EXSTYLE, style | WS_EX_LAYERED | WS_EX_TRANSPARENT);
         else
-            SetWindowLong(_hWnd, GWL_EXSTYLE, style & ~(WS_EX_LAYERED | WS_EX_TRANSPARENT));
+            // WS_EX_LAYERED는 투명도 유지를 위해 반드시 남겨둬야 합니다.
+            SetWindowLong(_hWnd, GWL_EXSTYLE, (style | WS_EX_LAYERED) & ~WS_EX_TRANSPARENT);
         #endif
     }
 
