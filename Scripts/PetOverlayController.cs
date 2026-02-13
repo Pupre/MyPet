@@ -2,7 +2,15 @@ using UnityEngine;
 
 public class PetOverlayController : MonoBehaviour
 {
+    public static PetOverlayController Instance { get; private set; }
     public bool isClickThrough = true;
+    private PetMovement _petMovement;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        _petMovement = GetComponent<PetMovement>();
+    }
 
     void Start()
     {
@@ -20,6 +28,12 @@ public class PetOverlayController : MonoBehaviour
         // 2. Win32 API 호출 (순서 중요)
         Win32Bridge.Instance.SetTransparency(true);
         
+        // 3. 방사형 메뉴 대상 설정
+        if (RadialMenuController.Instance != null)
+        {
+            RadialMenuController.Instance.targetPet = this.transform;
+        }
+
         // 크로마키 적용: 검은색(0,0,0)을 투명하게 처리
         // DwmExtend...가 실패하거나 URP가 검은색을 뱉을 때를 대비한 안전장치
         Win32Bridge.Instance.SetColorKey(new Color32(0, 0, 0, 255));
@@ -58,6 +72,29 @@ public class PetOverlayController : MonoBehaviour
         {
             isClickThrough = true; // 통과 모드 (배경 클릭 가능)
             UpdateClickThrough();
+        }
+
+        // --- 롱프레스 및 방사형 메뉴 연동 ---
+        if (isHovering && Input.GetMouseButtonDown(0))
+        {
+            if (RadialMenuController.Instance != null)
+                RadialMenuController.Instance.StartLongPress();
+
+            if (_petMovement != null) _petMovement.isLocked = true;
+        }
+        
+        if (Input.GetMouseButton(0))
+        {
+            if (RadialMenuController.Instance != null)
+                RadialMenuController.Instance.UpdateLongPress(Input.mousePosition);
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            if (RadialMenuController.Instance != null)
+                RadialMenuController.Instance.CancelLongPress();
+
+            if (_petMovement != null) _petMovement.isLocked = false;
         }
     }
 
