@@ -12,5 +12,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e45044bf22844fa488fadc2ad94499f5, type: 3}
   m_Name: TestPet
   m_EditorClassIdentifier: Assembly-CSharp::PetDefinition
-  speciesName: 
-  stages: []
+  speciesName: Dog
+  stages:
+  - stageNumber: 0
+    modelPrefab: {fileID: 0}
+    animatorController: {fileID: 0}
+    is2D: 1
+    idleSpriteSheet: {fileID: 2800000, guid: 4e2e869b6695e64428998666525fa221, type: 3}
+    moveSpriteSheet: {fileID: 2800000, guid: 219d2f671690e074bb661837db236fee, type: 3}
+    frameCount: 4
+    baseScale: 1
+  - stageNumber: 1
+    modelPrefab: {fileID: 0}
+    animatorController: {fileID: 0}
+    is2D: 1
+    idleSpriteSheet: {fileID: 2800000, guid: ed76fbfecbec912448cdf65f3699a8d0, type: 3}
+    moveSpriteSheet: {fileID: 2800000, guid: 3f50671dbdb99654f9bc5d5a52bf074e, type: 3}
+    frameCount: 4
+    baseScale: 1
+  - stageNumber: 2
+    modelPrefab: {fileID: 0}
+    animatorController: {fileID: 0}
+    is2D: 1
+    idleSpriteSheet: {fileID: 2800000, guid: a29e7e8b4c90a9843a0ce2cee759abb6, type: 3}
+    moveSpriteSheet: {fileID: 2800000, guid: a0e33c03e3abd6a4fb43130db83fc39b, type: 3}
+    frameCount: 4
+    baseScale: 1
+  - stageNumber: 3
+    modelPrefab: {fileID: 0}
+    animatorController: {fileID: 0}
+    is2D: 1
+    idleSpriteSheet: {fileID: 2800000, guid: 0e96daae99c53d4438d0d47056e8bc80, type: 3}
+    moveSpriteSheet: {fileID: 2800000, guid: f2acc3ddfa076f24db2342e187d16cb8, type: 3}
+    frameCount: 4
+    baseScale: 1
+  - stageNumber: 4
+    modelPrefab: {fileID: 0}
+    animatorController: {fileID: 0}
+    is2D: 1
+    idleSpriteSheet: {fileID: 2800000, guid: 2c479a4e0fd22a64a9f6258e64cfb1c5, type: 3}
+    moveSpriteSheet: {fileID: 2800000, guid: 663e31619f0d69e428d8e9d3a7b97e50, type: 3}
+    frameCount: 4
+    baseScale: 1

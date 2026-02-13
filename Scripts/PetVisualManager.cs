@@ -35,7 +35,13 @@ public class PetVisualManager : MonoBehaviour
         int currentStage = PetGrowthController.Instance.currentData.currentStage;
         PetStageInfo info = petDefinition.GetStageInfo(currentStage);
 
-        if (info == null) return;
+        Debug.Log($"[Visual Debug] 갱신 시도 - 현재 단계: {currentStage}, 찾은 정보 있음: {info != null}");
+
+        if (info == null)
+        {
+            Debug.LogWarning($"[Visual Debug] 펫 정의에서 {currentStage}단계 정보를 찾을 수 없습니다! Stages 리스트에 Stage Number가 {currentStage}인 항목이 있는지 확인해 주세요.");
+            return;
+        }
 
         // 기존 모델 제거
         if (_currentModel != null) Destroy(_currentModel);
@@ -52,15 +58,39 @@ public class PetVisualManager : MonoBehaviour
 
     private void Setup2DVisuals(PetStageInfo info)
     {
-        // 2D 모드에서는 이 스크립트가 붙은 오브젝트의 SpriteRenderer 사용
-        _spriteRenderer = GetComponent<SpriteRenderer>();
-        if (_spriteRenderer == null) _spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+        if (info == null) return;
 
-        // 간단한 스프라이트 애니메이션 세팅 (보통 Idle부터)
-        UpdateSpriteSheet(info.idleSpriteSheet, info.frameCount);
+        // 2D 비주얼을 전용 자식 오브젝트로 생성 (기존 컴포넌트와 충돌 방지)
+        _currentModel = new GameObject("2D Visual");
+        _currentModel.transform.SetParent(transform);
+        _currentModel.transform.localPosition = Vector3.zero;
+        _currentModel.transform.localRotation = Quaternion.identity;
+        _currentModel.transform.localScale = Vector3.one * info.baseScale;
+
+        _spriteRenderer = _currentModel.AddComponent<SpriteRenderer>();
         
-        transform.localScale = Vector3.one * info.baseScale;
-        Debug.Log($"[Visual] {petDefinition.speciesName} {info.stageNumber}단계 2D 스프라이트로 설정되었습니다.");
+        if (_spriteRenderer == null)
+        {
+            Debug.LogError("[Visual Debug] 2D 비주얼 오브젝트에 SpriteRenderer를 추가하는데 실패했습니다!");
+            return;
+        }
+
+        _spriteRenderer.enabled = true;
+        _spriteRenderer.color = Color.white;
+        _spriteRenderer.sortingOrder = 10; 
+
+        // 간단한 스프라이트 애니메이션 세팅
+        if (info.idleSpriteSheet != null)
+        {
+            int frames = Mathf.Max(1, info.frameCount);
+            UpdateSpriteSheet(info.idleSpriteSheet, frames);
+        }
+        else
+        {
+            Debug.LogWarning($"[Visual Debug] {info.stageNumber}단계의 Idle Sprite Sheet가 비어있습니다!");
+        }
+
+        Debug.Log($"[Visual] {petDefinition.speciesName} {info.stageNumber}단계 2D 비주얼이 생성되었습니다.");
     }
 
     private void Setup3DVisuals(PetStageInfo info, int currentStage)
@@ -83,8 +113,15 @@ public class PetVisualManager : MonoBehaviour
 
     void Update()
     {
-        // 2D 애니메이션 업데이트
-        if (petDefinition != null && petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage).is2D)
+        // 1. 필요한 인스턴스들이 있는지 먼저 확인 (Null 체크)
+        if (petDefinition == null || PetGrowthController.Instance == null || PetGrowthController.Instance.currentData == null) 
+            return;
+
+        // 2. 현재 단계 정보 가져오기
+        PetStageInfo info = petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+        
+        // 3. 단계 정보가 있고 2D 모드일 때만 애니메이션 업데이트
+        if (info != null && info.is2D)
         {
             Update2DAnimation();
         }
@@ -106,13 +143,20 @@ public class PetVisualManager : MonoBehaviour
     public void UpdateSpriteSheet(Texture2D sheet, int frames)
     {
         if (sheet == null) return;
+        if (frames <= 0) frames = 1;
 
         // 스프라이트 시트 자동 슬라이싱 (간단한 버전: 가로로 등분)
         _currentFrames = new Sprite[frames];
-        int frameWidth = sheet.width / frames;
+        int frameWidth = Mathf.Max(1, sheet.width / frames);
+        
         for (int i = 0; i < frames; i++)
         {
-            _currentFrames[i] = Sprite.Create(sheet, new Rect(i * frameWidth, 0, frameWidth, sheet.height), new Vector2(0.5f, 0.5f), 100f);
+            float xPos = i * frameWidth;
+            // 텍스처 범위를 벗어나지 않도록 보정
+            if (xPos + frameWidth > sheet.width) frameWidth = sheet.width - (int)xPos;
+            if (frameWidth <= 0) break;
+
+            _currentFrames[i] = Sprite.Create(sheet, new Rect(xPos, 0, frameWidth, sheet.height), new Vector2(0.5f, 0.5f), 100f);
             _currentFrames[i].name = $"{sheet.name}_{i}";
         }
         _frameIndex = 0;
