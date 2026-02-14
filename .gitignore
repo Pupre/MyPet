@@ -1,12 +1,14 @@
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Uu]serSettings/
+# Standard Unity gitignore
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+
+# MemoryCaptures can get large
 /[Mm]emoryCaptures/
-/[Rr]ecordings/
 
 # Asset meta files for unused assets
 *.meta
