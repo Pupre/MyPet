@@ -9,8 +9,8 @@ public class PetGrowthController : MonoBehaviour
     
     // 이펙터 수정을 방지하기 위해 상수로 하드코딩
     private const float GrowthRatePerFeed = 100f; // 밥 한 번에 100% 성장 (테스트 모드)
-    private const float Stage0Scale = 0.5f; // 시작은 조금 작게 (1.5 -> 1.0)
-    private const float Stage5Scale = 5.0f; // 최대치는 훨씬 크게 (3.0 -> 5.0)
+    private const float Stage0Scale = 3.0f; // 시작 크기 조정 (0.5 -> 3.0)
+    private const float Stage5Scale = 7.0f; // 최대 크기 조정 (5.0 -> 7.0)
     private const int ResetHour = 6; // 매일 오전 6시 초기화 (KST)
 
     [Header("Visual Settings")]
