@@ -48,35 +48,62 @@ public class PetOverlayController : MonoBehaviour
 
     void Update()
     {
-        #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
         DetectMouseInteraction();
-        #endif
     }
-
     void DetectMouseInteraction()
     {
-        // 마우스 위치로 레이캐스트 (전역 좌표계 사용으로 투명화 시에도 감지 가능)
-        Vector3 mousePos = Win32Bridge.Instance.GetMousePosition();
+        Vector3 mousePos = Input.mousePosition;
+
+        #if UNITY_EDITOR
+        // 신규 인풋 시스템(Both 모드)에서 Input.mousePosition이 엉뚱한 값을 뱉는 경우 대응
+        // Pointer.current나 Mouse.current가 있다면 그 값을 우선시합니다.
+        #if ENABLE_INPUT_SYSTEM
+        if (UnityEngine.InputSystem.Mouse.current != null)
+        {
+            mousePos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+        }
+        #endif
+        #else
+        mousePos = Win32Bridge.Instance.GetMousePosition();
+        #endif
+
+        if (Camera.main == null) {
+            if (Time.frameCount % 60 == 0) Debug.LogError("[PetInteraction] Camera.main is null!");
+            return;
+        }
+
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         RaycastHit hit;
 
         // 펫(Collider가 있는 객체)이 마우스 아래에 있는지 확인
-        // 레이어 마스크가 0(Default)이므로 펫 오브젝트의 레이어를 확인하세요.
+        // 레이어 마스크를 0(Default)으로 명시하거나 펫의 레이어에 맞게 조정하세요.
         bool isHovering = Physics.Raycast(ray, out hit, 100f);
         
-        // 디버그 레이 및 상태 로그 (빌드에서도 확인 가능하게 설정 가능)
-        Debug.DrawRay(ray.origin, ray.direction * 10f, isHovering ? Color.green : Color.red);
+        // 씬 뷰에서 확인 가능한 디버그 선 (거리를 100으로 늘림)
+        Debug.DrawRay(ray.origin, ray.direction * 100f, isHovering ? Color.green : Color.red);
 
-        // 상태가 바뀔 때만 API 호출 (성능 최적화)
+        // [핵심 디버그] 레이가 이상한 곳으로 갈 때 정보를 매 프레임 찍지 않고 1초마다 출력
+        if (Time.frameCount % 60 == 0)
+        {
+            Debug.Log($"[PetDebug] Cam: {Camera.main.name}, Screen: ({Screen.width}x{Screen.height}), Mouse: {mousePos}, RayPos: {ray.origin}, RayDir: {ray.direction}, Hover: {isHovering}");
+        }
+
+        // 상태가 바뀔 때만 API 호출
         if (isHovering && isClickThrough)
         {
-            isClickThrough = false; // 상호작용 모드 (클릭 받음)
+            Debug.Log($"[PetInteraction] SUCCESS: Hover Detected on {hit.collider.name}");
+            isClickThrough = false;
+            #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             UpdateClickThrough();
+            #endif
         }
         else if (!isHovering && !isClickThrough)
         {
-            isClickThrough = true; // 통과 모드 (배경 클릭 가능)
+            Debug.Log("[PetInteraction] Mouse Left");
+            isClickThrough = true;
+            #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             UpdateClickThrough();
+            #endif
         }
 
         // --- 롱프레스 및 방사형 메뉴 연동 ---
