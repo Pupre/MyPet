@@ -16,6 +16,13 @@ public class Win32Bridge : MonoBehaviour
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct RECT
     {
         public int Left;
@@ -23,6 +30,12 @@ public class Win32Bridge : MonoBehaviour
         public int Right;
         public int Bottom;
     }
+
+    [DllImport("user32.dll")]
+    public static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetActiveWindow();

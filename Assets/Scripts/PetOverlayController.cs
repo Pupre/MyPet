@@ -3,7 +3,7 @@ using UnityEngine;
 public class PetOverlayController : MonoBehaviour
 {
     public static PetOverlayController Instance { get; private set; }
-    public bool isClickThrough = true;
+    public bool isClickThrough = false; // 시작할 때는 클릭을 받도록 설정
     private PetMovement _petMovement;
 
     void Awake()
@@ -55,12 +55,17 @@ public class PetOverlayController : MonoBehaviour
 
     void DetectMouseInteraction()
     {
-        // 마우스 위치로 레이캐스트
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        // 마우스 위치로 레이캐스트 (전역 좌표계 사용으로 투명화 시에도 감지 가능)
+        Vector3 mousePos = Win32Bridge.Instance.GetMousePosition();
+        Ray ray = Camera.main.ScreenPointToRay(mousePos);
         RaycastHit hit;
 
         // 펫(Collider가 있는 객체)이 마우스 아래에 있는지 확인
+        // 레이어 마스크가 0(Default)이므로 펫 오브젝트의 레이어를 확인하세요.
         bool isHovering = Physics.Raycast(ray, out hit, 100f);
+        
+        // 디버그 레이 및 상태 로그 (빌드에서도 확인 가능하게 설정 가능)
+        Debug.DrawRay(ray.origin, ray.direction * 10f, isHovering ? Color.green : Color.red);
 
         // 상태가 바뀔 때만 API 호출 (성능 최적화)
         if (isHovering && isClickThrough)
