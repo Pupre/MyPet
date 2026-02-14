@@ -55,8 +55,6 @@ public class PetOverlayController : MonoBehaviour
         Vector3 mousePos = Input.mousePosition;
 
         #if UNITY_EDITOR
-        // 신규 인풋 시스템(Both 모드)에서 Input.mousePosition이 엉뚱한 값을 뱉는 경우 대응
-        // Pointer.current나 Mouse.current가 있다면 그 값을 우선시합니다.
         #if ENABLE_INPUT_SYSTEM
         if (UnityEngine.InputSystem.Mouse.current != null)
         {
@@ -67,39 +65,30 @@ public class PetOverlayController : MonoBehaviour
         mousePos = Win32Bridge.Instance.GetMousePosition();
         #endif
 
-        if (Camera.main == null) {
-            if (Time.frameCount % 60 == 0) Debug.LogError("[PetInteraction] Camera.main is null!");
-            return;
-        }
+        if (Camera.main == null) return;
 
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         RaycastHit hit;
-
-        // 펫(Collider가 있는 객체)이 마우스 아래에 있는지 확인
-        // 레이어 마스크를 0(Default)으로 명시하거나 펫의 레이어에 맞게 조정하세요.
         bool isHovering = Physics.Raycast(ray, out hit, 100f);
         
-        // 씬 뷰에서 확인 가능한 디버그 선 (거리를 100으로 늘림)
-        Debug.DrawRay(ray.origin, ray.direction * 100f, isHovering ? Color.green : Color.red);
+        // 시각적 확인을 위한 레이 (조금 더 연하게 유지)
+        Debug.DrawRay(ray.origin, ray.direction * 100f, isHovering ? Color.green : new Color(1, 0, 0, 0.2f));
 
-        // [핵심 디버그] 레이가 이상한 곳으로 갈 때 정보를 매 프레임 찍지 않고 1초마다 출력
-        if (Time.frameCount % 60 == 0)
-        {
-            Debug.Log($"[PetDebug] Cam: {Camera.main.name}, Screen: ({Screen.width}x{Screen.height}), Mouse: {mousePos}, RayPos: {ray.origin}, RayDir: {ray.direction}, Hover: {isHovering}");
-        }
+        // 상태가 바뀔 때만 API 호출 (롱프레스 중에는 클릭 통과 모드 전환 방지)
+        bool isMouseHeld = Input.GetMouseButton(0);
+        #if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+        if (UnityEngine.InputSystem.Mouse.current != null) isMouseHeld = UnityEngine.InputSystem.Mouse.current.leftButton.isPressed;
+        #endif
 
-        // 상태가 바뀔 때만 API 호출
         if (isHovering && isClickThrough)
         {
-            Debug.Log($"[PetInteraction] SUCCESS: Hover Detected on {hit.collider.name}");
             isClickThrough = false;
             #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             UpdateClickThrough();
             #endif
         }
-        else if (!isHovering && !isClickThrough)
+        else if (!isHovering && !isClickThrough && !isMouseHeld) // 마우스를 떼고 나서만 클릭 통과 모드 복구
         {
-            Debug.Log("[PetInteraction] Mouse Left");
             isClickThrough = true;
             #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             UpdateClickThrough();
@@ -107,7 +96,16 @@ public class PetOverlayController : MonoBehaviour
         }
 
         // --- 롱프레스 및 방사형 메뉴 연동 ---
-        if (isHovering && Input.GetMouseButtonDown(0))
+        bool isMouseDown = Input.GetMouseButtonDown(0);
+        bool isMouseUp = Input.GetMouseButtonUp(0);
+        #if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
+        if (UnityEngine.InputSystem.Mouse.current != null) {
+            isMouseDown = UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame;
+            isMouseUp = UnityEngine.InputSystem.Mouse.current.leftButton.wasReleasedThisFrame;
+        }
+        #endif
+
+        if (isHovering && isMouseDown)
         {
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.StartLongPress();
@@ -115,13 +113,13 @@ public class PetOverlayController : MonoBehaviour
             if (_petMovement != null) _petMovement.isLocked = true;
         }
         
-        if (Input.GetMouseButton(0))
+        if (isMouseHeld)
         {
             if (RadialMenuController.Instance != null)
-                RadialMenuController.Instance.UpdateLongPress(Input.mousePosition);
+                RadialMenuController.Instance.UpdateLongPress(mousePos); // 보정된 좌표 전달
         }
 
-        if (Input.GetMouseButtonUp(0))
+        if (isMouseUp)
         {
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.CancelLongPress();
