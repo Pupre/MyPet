@@ -14,6 +14,14 @@ public class PetDefinition : ScriptableObject
 }
 
 [System.Serializable]
+public class PetAction
+{
+    public string actionName;
+    public Texture2D spriteSheet;
+    public int frameCount = 4;
+}
+
+[System.Serializable]
 public class PetStageInfo
 {
     public int stageNumber;
@@ -26,6 +34,7 @@ public class PetStageInfo
     public bool is2D = true;
     public Texture2D idleSpriteSheet;
     public Texture2D moveSpriteSheet;
+    public List<PetAction> specialActions = new List<PetAction>(); // 특수 동작 리스트
     public int frameCount = 4; // 기본 4프레임
     
     [Header("Common")]

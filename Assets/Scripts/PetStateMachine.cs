@@ -8,6 +8,8 @@ public class PetStateMachine : MonoBehaviour
 
     [SerializeField] private PetState currentState;
     private PetMovement _movement;
+    private float _stateTimer;
+    private float _nextChangeTime;
 
     void Awake()
     {
@@ -17,14 +19,51 @@ public class PetStateMachine : MonoBehaviour
 
     void Start()
     {
-        ChangeState(PetState.Idle);
+        // 시작 시 랜덤한 지연 시간 설정 후 이동 상태로 시작
+        SetRandomNextChangeTime(1f, 3f);
+        ChangeState(PetState.Move);
+    }
+
+    void Update()
+    {
+        // 상호작용 중이 아닐 때만 자율 AI 작동
+        if (currentState == PetState.Idle || currentState == PetState.Move)
+        {
+            _stateTimer += Time.deltaTime;
+            if (_stateTimer >= _nextChangeTime)
+            {
+                _stateTimer = 0f;
+                AutoToggleState();
+            }
+        }
+    }
+
+    private void AutoToggleState()
+    {
+        if (currentState == PetState.Idle)
+        {
+            ChangeState(PetState.Move);
+            SetRandomNextChangeTime(3f, 6f); // 이동 지속 시간
+        }
+        else if (currentState == PetState.Move)
+        {
+            ChangeState(PetState.Idle);
+            SetRandomNextChangeTime(2f, 5f); // 대기 지속 시간
+        }
+    }
+
+    private void SetRandomNextChangeTime(float min, float max)
+    {
+        _nextChangeTime = UnityEngine.Random.Range(min, max);
     }
 
     public void ChangeState(PetState newState)
     {
-        currentState = newState;
+        if (PetVisualManager.Instance == null) return;
 
-        // Visual Manager에 애니메이션 파라미터 전달
+        currentState = newState;
+        _stateTimer = 0f; // 상태 변경 시 타이머 초기화
+
         switch (newState)
         {
             case PetState.Idle:
@@ -34,7 +73,11 @@ public class PetStateMachine : MonoBehaviour
 
             case PetState.Move:
                 PetVisualManager.Instance.SetAnimationState("isMoving", true);
-                if (_movement != null) _movement.isLocked = false;
+                if (_movement != null)
+                {
+                    _movement.isLocked = false;
+                    _movement.SetNewRandomTarget(); // 새 목표 설정
+                }
                 break;
 
             case PetState.Interact:

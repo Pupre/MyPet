@@ -442,8 +442,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uB514\uBC84\uADF8 \uB85C\uADF8"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: b1e9a181b553b224e99ce9ac6a3a12e4, type: 2}
-  m_sharedMaterial: {fileID: 7283723312462400448, guid: b1e9a181b553b224e99ce9ac6a3a12e4, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2215b15b5d618bc4fb73056b6789297b, type: 2}
+  m_sharedMaterial: {fileID: 7283723312462400448, guid: 2215b15b5d618bc4fb73056b6789297b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -685,7 +685,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PetMovement
   tracker: {fileID: 1914019204}
-  moveSpeed: 5
+  moveSpeed: 2
   idleOffset: {x: 0, y: 0, z: 0}
   useRandomMovement: 1
   isLocked: 0
@@ -801,7 +801,7 @@ MonoBehaviour:
     growthProgress: 0
     affectionLevel: 0
     lastFeedTimeStr: "0001-01-01 \uC624\uC804 12:00:00"
-  petModel: {fileID: 1040170629}
+  petModel: {fileID: 0}
 --- !u!114 &1040170631
 MonoBehaviour:
   m_ObjectHideFlags: 0

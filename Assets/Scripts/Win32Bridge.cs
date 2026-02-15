@@ -149,4 +149,18 @@ public class Win32Bridge : MonoBehaviour
         GetWindowRect(activeHWnd, out rect);
         return rect;
     }
+    public Vector3 GetMousePosition()
+    {
+        #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+        POINT pt;
+        if (GetCursorPos(out pt))
+        {
+            // 전역 좌표(스크린)를 클라이언트 좌표(유니티 윈도우 내부)로 변환
+            ScreenToClient(_hWnd, ref pt);
+            // 유니티는 좌측 하단이 (0,0)이고 마우스 API는 좌측 상단이 (0,0)이므로 Y축 보정
+            return new Vector3(pt.X, Screen.height - pt.Y, 0);
+        }
+        #endif
+        return Input.mousePosition;
+    }
 }
