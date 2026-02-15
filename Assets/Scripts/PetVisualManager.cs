@@ -79,11 +79,10 @@ public class PetVisualManager : MonoBehaviour
         _spriteRenderer.color = Color.white;
         _spriteRenderer.sortingOrder = 10; 
 
-        // 간단한 스프라이트 애니메이션 세팅
+        // 간단한 스프라이트 애니메이션 세팅 (Idle로 시작)
         if (info.idleSpriteSheet != null)
         {
-            int frames = Mathf.Max(1, info.frameCount);
-            UpdateSpriteSheet(info.idleSpriteSheet, frames);
+            UpdateSpriteSheet(info.idleSpriteSheet, info.idleFrameCount);
         }
         else
         {
@@ -163,7 +162,19 @@ public class PetVisualManager : MonoBehaviour
     public void UpdateSpriteSheet(Texture2D sheet, int frames)
     {
         if (sheet == null) return;
-        if (frames <= 0) frames = 1;
+        
+        // 프레임 수가 0 이하로 들어오면 이미지 비율(가로/세로)을 사용해 자동으로 계산합니다.
+        // 예를 들어 192x32 이미지는 6프레임으로 인식합니다.
+        if (frames <= 0)
+        {
+            frames = Mathf.RoundToInt((float)sheet.width / sheet.height);
+            if (frames <= 0) frames = 1;
+            Debug.Log($"[Visual] Sprite Auto-Detect: {sheet.name} ({sheet.width}x{sheet.height}) -> Calculated Frames: {frames}");
+        }
+        else
+        {
+            Debug.Log($"[Visual] Sprite Manual-Set: {sheet.name} ({sheet.width}x{sheet.height}) -> Frames: {frames}");
+        }
 
         _currentFrames = new Sprite[frames];
         int frameWidth = Mathf.Max(1, sheet.width / frames);
@@ -223,7 +234,10 @@ public class PetVisualManager : MonoBehaviour
             {
                 if (paramName == "isMoving")
                 {
-                    UpdateSpriteSheet(value ? info.moveSpriteSheet : info.idleSpriteSheet, info.frameCount);
+                    if (value)
+                        UpdateSpriteSheet(info.moveSpriteSheet, info.moveFrameCount);
+                    else
+                        UpdateSpriteSheet(info.idleSpriteSheet, info.idleFrameCount);
                 }
             }
         }

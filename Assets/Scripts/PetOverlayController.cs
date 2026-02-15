@@ -110,6 +110,9 @@ public class PetOverlayController : MonoBehaviour
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.StartLongPress();
 
+            if (PetStateMachine.Instance != null)
+                PetStateMachine.Instance.ChangeState(PetState.Struggling);
+            
             if (_petMovement != null) _petMovement.isLocked = true;
         }
         
@@ -123,6 +126,10 @@ public class PetOverlayController : MonoBehaviour
         {
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.CancelLongPress();
+
+            // 상호작용이 끝나면 다시 Idle 상태로 돌려보냄 (이후 AI에 의해 Move로 전환됨)
+            if (PetStateMachine.Instance != null && PetStateMachine.Instance.GetCurrentState() == PetState.Struggling)
+                PetStateMachine.Instance.ChangeState(PetState.Idle);
 
             if (_petMovement != null) _petMovement.isLocked = false;
         }

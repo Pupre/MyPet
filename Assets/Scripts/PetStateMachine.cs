@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum PetState { Idle, Move, Interact, Eat }
+public enum PetState { Idle, Move, Interact, Eat, Struggling }
 
 public class PetStateMachine : MonoBehaviour
 {
@@ -26,8 +26,9 @@ public class PetStateMachine : MonoBehaviour
 
     void Update()
     {
-        // 상호작용 중이 아닐 때만 자율 AI 작동
-        if (currentState == PetState.Idle || currentState == PetState.Move)
+        // 상호작용(Interact, Eat) 중이거나 대기/이동 중일 때 자율 AI 타이머 작동
+        // (Struggling 상태일 때는 타이머가 멈춰서 계속 아둥바둥함)
+        if (currentState != PetState.Struggling)
         {
             _stateTimer += Time.deltaTime;
             if (_stateTimer >= _nextChangeTime)
@@ -40,16 +41,43 @@ public class PetStateMachine : MonoBehaviour
 
     private void AutoToggleState()
     {
-        if (currentState == PetState.Idle)
+        // 20% 확률로 특수 동작(Special Action) 수행
+        if (Random.value < 0.2f)
+        {
+            if (TryPlayRandomSpecialAction())
+            {
+                SetRandomNextChangeTime(2f, 4f); // 특수 동작 지속 시간
+                return;
+            }
+        }
+
+        if (currentState == PetState.Idle || currentState == PetState.Interact || currentState == PetState.Struggling)
         {
             ChangeState(PetState.Move);
             SetRandomNextChangeTime(3f, 6f); // 이동 지속 시간
         }
-        else if (currentState == PetState.Move)
+        else
         {
             ChangeState(PetState.Idle);
             SetRandomNextChangeTime(2f, 5f); // 대기 지속 시간
         }
+    }
+
+    private bool TryPlayRandomSpecialAction()
+    {
+        if (PetVisualManager.Instance == null || PetVisualManager.Instance.petDefinition == null) return false;
+
+        var info = PetVisualManager.Instance.petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+        if (info == null || info.specialActions == null || info.specialActions.Count == 0) return false;
+
+        // 랜덤하게 하나 선택
+        int index = Random.Range(0, info.specialActions.Count);
+        string actionName = info.specialActions[index].actionName;
+
+        ChangeState(PetState.Interact); // Interact 상태를 빌려씀 (정지 상태)
+        PetVisualManager.Instance.PlayAction(actionName);
+        Debug.Log($"[AI] 특수 동작 재생: {actionName}");
+        return true;
     }
 
     private void SetRandomNextChangeTime(float min, float max)
@@ -87,6 +115,22 @@ public class PetStateMachine : MonoBehaviour
 
             case PetState.Eat:
                 PetVisualManager.Instance.TriggerAnimation("eat");
+                if (_movement != null) _movement.isLocked = true;
+                break;
+
+            case PetState.Struggling:
+                if (PetVisualManager.Instance.petDefinition != null)
+                {
+                    PetStageInfo info = PetVisualManager.Instance.petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+                    if (info != null && info.is2D && info.struggleSpriteSheet != null)
+                    {
+                        PetVisualManager.Instance.UpdateSpriteSheet(info.struggleSpriteSheet, info.struggleFrameCount);
+                    }
+                    else if (info != null && !info.is2D)
+                    {
+                        PetVisualManager.Instance.TriggerAnimation("struggle");
+                    }
+                }
                 if (_movement != null) _movement.isLocked = true;
                 break;
         }

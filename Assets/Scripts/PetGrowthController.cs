@@ -40,10 +40,17 @@ public class PetGrowthController : MonoBehaviour
     }
 
     // 밥 주기 시도
-    public bool TryFeed()
+    public bool TryFeed(bool isInstant = false)
     {
         DateTime now = DateTime.Now;
         
+        if (isInstant)
+        {
+            AddGrowth(GrowthRatePerFeed);
+            Debug.Log("[Cheat] 즉시 밥을 주었습니다!");
+            return true;
+        }
+
         // 현재 시각 기준 가장 최근의 오전 6시 구하기
         DateTime lastResetTime = new DateTime(now.Year, now.Month, now.Day, ResetHour, 0, 0);
         if (now.Hour < ResetHour)
@@ -65,6 +72,16 @@ public class PetGrowthController : MonoBehaviour
         TimeSpan waitTime = nextResetTime - now;
         Debug.Log($"이미 밥을 먹었습니다. 오전 {ResetHour}시 초기화까지 {waitTime.Hours}시간 {waitTime.Minutes}분 남았습니다.");
         return false;
+    }
+
+    [ContextMenu("Reset Level")]
+    public void ResetLevel()
+    {
+        currentData.currentStage = 0;
+        currentData.growthProgress = 0f;
+        ApplyGrowthVisuals();
+        SavePetData();
+        Debug.Log("[System] 펫 레벨이 초기화되었습니다.");
     }
 
     private void AddGrowth(float amount)
@@ -108,8 +125,6 @@ public class PetGrowthController : MonoBehaviour
         petModel.localScale = Vector3.one * finalScale;
 
         Debug.Log($"[성장 로그] 현재 단계: {currentData.currentStage}, 성장률: {currentData.growthProgress}%, 최종 스케일: {finalScale}");
-
-        // TODO: 나중에 단계별 메시(Mesh) 교체 로직 추가
     }
 
     [ContextMenu("Debug Feed")]
