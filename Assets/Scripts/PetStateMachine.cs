@@ -26,8 +26,9 @@ public class PetStateMachine : MonoBehaviour
 
     void Update()
     {
-        // 상호작용(Interact, Eat) 중이거나 대기/이동 중일 때 자율 AI 타이머 작동
-        // (Struggling 상태일 때는 타이머가 멈춰서 계속 아둥바둥함)
+        // Struggling(붙잡힘) 상태일 때는 AI 타이머 및 상태 전환을 완전히 중단합니다.
+        // Eat(밥먹기), Interact(특수동작) 중일 때는 타이머는 흐르지만, 
+        // 애니메이션이 끝날 때까지 대기하도록 AutoToggleState 내부에서 처리될 수 있습니다.
         if (currentState != PetState.Struggling)
         {
             _stateTimer += Time.deltaTime;
@@ -41,26 +42,31 @@ public class PetStateMachine : MonoBehaviour
 
     private void AutoToggleState()
     {
-        // 20% 확률로 특수 동작(Special Action) 수행
+        // AI에 의한 강제 상태 전환 로직
+        
+        // 1. 특수 동작 확률 체크
         if (Random.value < 0.2f)
         {
             if (TryPlayRandomSpecialAction())
             {
-                SetRandomNextChangeTime(2f, 4f); // 특수 동작 지속 시간
+                SetRandomNextChangeTime(2f, 4f); 
                 return;
             }
         }
 
-        if (currentState == PetState.Idle || currentState == PetState.Interact || currentState == PetState.Struggling)
+        // 2. 현재 상태에 따른 다음 상태 결정
+        // (Struggling 상태는 여기서 제외하여 AI가 멋대로 이동 상태로 바꾸지 못하게 함)
+        if (currentState == PetState.Idle || currentState == PetState.Interact)
         {
             ChangeState(PetState.Move);
-            SetRandomNextChangeTime(3f, 6f); // 이동 지속 시간
+            SetRandomNextChangeTime(3f, 6f);
         }
-        else
+        else if (currentState == PetState.Move)
         {
             ChangeState(PetState.Idle);
-            SetRandomNextChangeTime(2f, 5f); // 대기 지속 시간
+            SetRandomNextChangeTime(2f, 5f);
         }
+        // Struggling 상태일 때는 AI가 개입하지 않고 마우스를 뗄 때까지 대기함
     }
 
     private bool TryPlayRandomSpecialAction()
@@ -85,7 +91,7 @@ public class PetStateMachine : MonoBehaviour
         _nextChangeTime = UnityEngine.Random.Range(min, max);
     }
 
-    public void ChangeState(PetState newState)
+    public void ChangeState(PetState newState, bool resetTarget = true)
     {
         if (PetVisualManager.Instance == null) return;
 
@@ -104,7 +110,10 @@ public class PetStateMachine : MonoBehaviour
                 if (_movement != null)
                 {
                     _movement.isLocked = false;
-                    _movement.SetNewRandomTarget(); // 새 목표 설정
+                    if (resetTarget)
+                    {
+                        _movement.SetNewRandomTarget(); // 새 목표 설정 (기본값)
+                    }
                 }
                 break;
 
@@ -135,7 +144,7 @@ public class PetStateMachine : MonoBehaviour
                 break;
         }
 
-        Debug.Log($"[FSM] 상태 변경: {newState}");
+        Debug.Log($"[FSM] {newState} (ResetTarget: {resetTarget})");
     }
 
     public PetState GetCurrentState() => currentState;
