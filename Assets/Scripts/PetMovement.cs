@@ -20,18 +20,12 @@ public class PetMovement : MonoBehaviour
 
     void Update()
     {
-        if (isLocked) return; // 꾹 누르고 있을 때는 정지
+        if (isLocked) return;
 
         Vector3 destination;
 
         if (useRandomMovement)
         {
-            _timer += Time.deltaTime;
-            if (_timer >= changeTargetInterval)
-            {
-                SetNewRandomTarget();
-                _timer = 0;
-            }
             destination = _randomTarget;
         }
         else if (tracker != null && tracker.hasActiveWindow)
@@ -43,14 +37,41 @@ public class PetMovement : MonoBehaviour
             destination = Vector3.zero;
         }
 
-        transform.position = Vector3.Lerp(transform.position, destination, moveSpeed * Time.deltaTime);
+        // Lerp 대신 MoveTowards를 사용하여 일정한 속도로 이동 ("슝 슝" 날아가는 느낌 제거)
+        Vector3 newPos = Vector3.MoveTowards(transform.position, destination, moveSpeed * Time.deltaTime);
+        
+        // 이동 방향에 따라 펫 좌우 반전 (스케일을 뒤집는 방식)
+        if (newPos.x != transform.position.x)
+        {
+            Vector3 localScale = transform.localScale;
+            bool isMovingRight = newPos.x > transform.position.x;
+            // 2D 스프라이트의 경우 Flip을 처리하는 방식이 다를 수 있으나, 일반적으로 부모 스케일 조정을 많이 사용함
+            // 여기서는 단순함을 위해 방향 변수만 계산함 (VisualManager에서 처리하도록 보강 가능)
+        }
+
+        transform.position = newPos;
+
+        // 목표 지점에 거의 도달했는지 확인
+        if (useRandomMovement && Vector3.Distance(transform.position, _randomTarget) < 0.1f)
+        {
+            // 목표 도달 알림을 StateMachine 등에 보낼 수 있음
+            OnTargetReached();
+        }
     }
 
-    private void SetNewRandomTarget()
+    private void OnTargetReached()
     {
-        // 화면 안에서 적당한 랜덤 좌표 생성 (Orthographic 카메라 기준 대략적인 범위)
-        float rangeX = 8.0f;
-        float rangeY = 4.5f;
-        _randomTarget = new Vector3(UnityEngine.Random.Range(-rangeX, rangeX), UnityEngine.Random.Range(-rangeY, rangeY), 0);
+        // 목표에 도달하면 상태 머신에게 알려서 다음 행동을 결정하게 함
+        if (PetStateMachine.Instance != null && PetStateMachine.Instance.GetCurrentState() == PetState.Move)
+        {
+            PetStateMachine.Instance.ChangeState(PetState.Idle);
+        }
+    }
+
+    public void SetNewRandomTarget()
+    {
+        float rangeX = 7.0f;
+        float rangeY = 4.0f;
+        _randomTarget = new Vector3(UnityEngine.Random.Range(-rangeX, rangeX), UnityEngine.Random.Range(-rangeY, rangeY), transform.position.z);
     }
 }

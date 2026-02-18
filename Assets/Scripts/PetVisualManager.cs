@@ -79,11 +79,10 @@ public class PetVisualManager : MonoBehaviour
         _spriteRenderer.color = Color.white;
         _spriteRenderer.sortingOrder = 10; 
 
-        // 간단한 스프라이트 애니메이션 세팅
+        // 간단한 스프라이트 애니메이션 세팅 (Idle로 시작)
         if (info.idleSpriteSheet != null)
         {
-            int frames = Mathf.Max(1, info.frameCount);
-            UpdateSpriteSheet(info.idleSpriteSheet, frames);
+            UpdateSpriteSheet(info.idleSpriteSheet, info.idleFrameCount);
         }
         else
         {
@@ -113,19 +112,39 @@ public class PetVisualManager : MonoBehaviour
 
     void Update()
     {
-        // 1. 필요한 인스턴스들이 있는지 먼저 확인 (Null 체크)
         if (petDefinition == null || PetGrowthController.Instance == null || PetGrowthController.Instance.currentData == null) 
             return;
 
-        // 2. 현재 단계 정보 가져오기
         PetStageInfo info = petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
         
-        // 3. 단계 정보가 있고 2D 모드일 때만 애니메이션 업데이트
         if (info != null && info.is2D)
         {
             Update2DAnimation();
+            Update2DFlip();
         }
     }
+
+    private void Update2DFlip()
+    {
+        if (_spriteRenderer == null) return;
+
+        // 펫이 움직이고 있다면 진행 방향에 따라 좌우 반전
+        // 여기서 transform.parent는 펫의 실제 이동 주체(PetMovement가 붙은 오브젝트)임
+        if (PetStateMachine.Instance != null && PetStateMachine.Instance.GetCurrentState() == PetState.Move)
+        {
+            // PetMovement의 위치 변화를 직접 감시해서 방향 결정
+            // (localScale을 뒤집지 않고 spriteRenderer.flipX를 사용하면 자식 오브젝트 관리가 편함)
+            float moveDirection = transform.position.x - _lastX;
+            if (Mathf.Abs(moveDirection) > 0.001f)
+            {
+                // 로직상 방향이 반대라면 !isMovingRight 등으로 조정 가능
+                // 여기서는 오른쪽으로 갈 때 flipX = true (이미지에 따라 다름)
+                _spriteRenderer.flipX = moveDirection < 0; 
+            }
+            _lastX = transform.position.x;
+        }
+    }
+    private float _lastX;
 
     private void Update2DAnimation()
     {
@@ -143,33 +162,71 @@ public class PetVisualManager : MonoBehaviour
     public void UpdateSpriteSheet(Texture2D sheet, int frames)
     {
         if (sheet == null) return;
-        if (frames <= 0) frames = 1;
+        
+        // 프레임 수가 0 이하로 들어오면 이미지 비율(가로/세로)을 사용해 자동으로 계산합니다.
+        // 예를 들어 192x32 이미지는 6프레임으로 인식합니다.
+        if (frames <= 0)
+        {
+            frames = Mathf.RoundToInt((float)sheet.width / sheet.height);
+            if (frames <= 0) frames = 1;
+            Debug.Log($"[Visual] Sprite Auto-Detect: {sheet.name} ({sheet.width}x{sheet.height}) -> Calculated Frames: {frames}");
+        }
+        else
+        {
+            Debug.Log($"[Visual] Sprite Manual-Set: {sheet.name} ({sheet.width}x{sheet.height}) -> Frames: {frames}");
+        }
 
-        // 스프라이트 시트 자동 슬라이싱 (간단한 버전: 가로로 등분)
         _currentFrames = new Sprite[frames];
         int frameWidth = Mathf.Max(1, sheet.width / frames);
         
         for (int i = 0; i < frames; i++)
         {
             float xPos = i * frameWidth;
-            // 텍스처 범위를 벗어나지 않도록 보정
             if (xPos + frameWidth > sheet.width) frameWidth = sheet.width - (int)xPos;
             if (frameWidth <= 0) break;
 
-            _currentFrames[i] = Sprite.Create(sheet, new Rect(xPos, 0, frameWidth, sheet.height), new Vector2(0.5f, 0.5f), 100f);
+            // 엣지 블리딩 방지를 위해 0.5픽셀 마진을 둡니다.
+            float inset = 0.5f;
+            _currentFrames[i] = Sprite.Create(sheet, 
+                new Rect(xPos + inset, inset, frameWidth - (inset * 2), sheet.height - (inset * 2)), 
+                new Vector2(0.5f, 0.5f), 100f);
             _currentFrames[i].name = $"{sheet.name}_{i}";
         }
         _frameIndex = 0;
         _frameTimer = 0f;
     }
 
+    /// <summary>
+    /// 이름 기반으로 특정 액션(애니메이션)을 재생합니다. 
+    /// 사용자님이 인스펙터에서 추가한 이름을 입력하면 됩니다. (예: "Attack", "Special")
+    /// </summary>
+    public void PlayAction(string actionName)
+    {
+        if (petDefinition == null) return;
+        PetStageInfo info = petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+        if (info == null) return;
+
+        if (info.is2D)
+        {
+            // 리스트에서 이름으로 검색
+            PetAction action = info.specialActions.Find(a => a.actionName == actionName);
+            if (action != null && action.spriteSheet != null)
+            {
+                UpdateSpriteSheet(action.spriteSheet, action.frameCount);
+            }
+        }
+        else
+        {
+            // 3D의 경우 애니메이터 트리거로 작동
+            if (_animator != null) _animator.SetTrigger(actionName);
+        }
+    }
+
     // 애니메이션 상태를 변경하기 위한 인터페이스
     public void SetAnimationState(string paramName, bool value)
     {
-        // 3D 애니메이터 제어
         if (_animator != null) _animator.SetBool(paramName, value);
 
-        // 2D 스프라이트 시트 교체 (isMoving 기준)
         if (petDefinition != null)
         {
             PetStageInfo info = petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
@@ -177,7 +234,10 @@ public class PetVisualManager : MonoBehaviour
             {
                 if (paramName == "isMoving")
                 {
-                    UpdateSpriteSheet(value ? info.moveSpriteSheet : info.idleSpriteSheet, info.frameCount);
+                    if (value)
+                        UpdateSpriteSheet(info.moveSpriteSheet, info.moveFrameCount);
+                    else
+                        UpdateSpriteSheet(info.idleSpriteSheet, info.idleFrameCount);
                 }
             }
         }
@@ -186,5 +246,7 @@ public class PetVisualManager : MonoBehaviour
     public void TriggerAnimation(string triggerName)
     {
         if (_animator != null) _animator.SetTrigger(triggerName);
+        // 2D에서도 트리거 형태로 재생 원할 경우 PlayAction 호출 가능
+        PlayAction(triggerName);
     }
 }

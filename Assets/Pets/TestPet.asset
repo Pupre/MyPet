@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e45044bf22844fa488fadc2ad94499f5, type: 3}
+  m_Script: {fileID: 11500000, guid: 981220a62cd71e745991be0526cf774a, type: 3}
   m_Name: TestPet
   m_EditorClassIdentifier: Assembly-CSharp::PetDefinition
   speciesName: Dog
@@ -18,39 +18,44 @@ MonoBehaviour:
     modelPrefab: {fileID: 0}
     animatorController: {fileID: 0}
     is2D: 1
-    idleSpriteSheet: {fileID: 2800000, guid: 4e2e869b6695e64428998666525fa221, type: 3}
-    moveSpriteSheet: {fileID: 2800000, guid: 219d2f671690e074bb661837db236fee, type: 3}
-    frameCount: 4
+    idleSpriteSheet: {fileID: 2800000, guid: 5ab827d5696cadf40afe139403ddd7ae, type: 3}
+    idleFrameCount: 0
+    moveSpriteSheet: {fileID: 2800000, guid: 8c0667ac14e7fc245afc93bc43bf62b5, type: 3}
+    moveFrameCount: 0
+    struggleSpriteSheet: {fileID: 2800000, guid: 91884f8891914564bbce30ebd6f3210a, type: 3}
+    struggleFrameCount: 0
+    specialActions:
+    - actionName: ii
+      spriteSheet: {fileID: 2800000, guid: 4ed65d9a302e4584785bb2b349b2aee1, type: 3}
+      frameCount: 0
     baseScale: 1
   - stageNumber: 1
     modelPrefab: {fileID: 0}
     animatorController: {fileID: 0}
     is2D: 1
-    idleSpriteSheet: {fileID: 2800000, guid: ed76fbfecbec912448cdf65f3699a8d0, type: 3}
-    moveSpriteSheet: {fileID: 2800000, guid: 3f50671dbdb99654f9bc5d5a52bf074e, type: 3}
-    frameCount: 4
+    idleSpriteSheet: {fileID: 2800000, guid: c1cbd884cce0a494fae7c8c2aad553a5, type: 3}
+    idleFrameCount: 0
+    moveSpriteSheet: {fileID: 2800000, guid: 5937c98e1973efd49b4ef4be688f8a56, type: 3}
+    moveFrameCount: 0
+    struggleSpriteSheet: {fileID: 2800000, guid: 8c2930c13af664647b92f5f2cfd6e025, type: 3}
+    struggleFrameCount: 0
+    specialActions:
+    - actionName: ii
+      spriteSheet: {fileID: 2800000, guid: ac046ad2e5464c6438bdd8531b909e2c, type: 3}
+      frameCount: 0
     baseScale: 1
   - stageNumber: 2
     modelPrefab: {fileID: 0}
     animatorController: {fileID: 0}
     is2D: 1
-    idleSpriteSheet: {fileID: 2800000, guid: a29e7e8b4c90a9843a0ce2cee759abb6, type: 3}
-    moveSpriteSheet: {fileID: 2800000, guid: a0e33c03e3abd6a4fb43130db83fc39b, type: 3}
-    frameCount: 4
-    baseScale: 1
-  - stageNumber: 3
-    modelPrefab: {fileID: 0}
-    animatorController: {fileID: 0}
-    is2D: 1
-    idleSpriteSheet: {fileID: 2800000, guid: 0e96daae99c53d4438d0d47056e8bc80, type: 3}
-    moveSpriteSheet: {fileID: 2800000, guid: f2acc3ddfa076f24db2342e187d16cb8, type: 3}
-    frameCount: 4
-    baseScale: 1
-  - stageNumber: 4
-    modelPrefab: {fileID: 0}
-    animatorController: {fileID: 0}
-    is2D: 1
-    idleSpriteSheet: {fileID: 2800000, guid: 2c479a4e0fd22a64a9f6258e64cfb1c5, type: 3}
-    moveSpriteSheet: {fileID: 2800000, guid: 663e31619f0d69e428d8e9d3a7b97e50, type: 3}
-    frameCount: 4
+    idleSpriteSheet: {fileID: 2800000, guid: f76dbb16425ea234aab2cbf2d2662a3a, type: 3}
+    idleFrameCount: 0
+    moveSpriteSheet: {fileID: 2800000, guid: e3582a0a291a69047863f6a13f1e5a81, type: 3}
+    moveFrameCount: 0
+    struggleSpriteSheet: {fileID: 2800000, guid: b9b9bb0c159d94841ac788a2c3223912, type: 3}
+    struggleFrameCount: 0
+    specialActions:
+    - actionName: ii
+      spriteSheet: {fileID: 2800000, guid: 646ee4309e5ab70408b0b47f49705872, type: 3}
+      frameCount: 0
     baseScale: 1

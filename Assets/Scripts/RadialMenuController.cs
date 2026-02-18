@@ -13,6 +13,8 @@ public class RadialMenuController : MonoBehaviour
     public GameObject menuRoot;
     public Image progressGauge; // 원형 Fill 이미지
     public GameObject feedButton; // 밥 주기 아이콘/버튼
+    public GameObject instantFeedButton; // 즉시 밥 주기 아이콘/버튼
+    public GameObject resetButton; // 레벨 초기화 아이콘/버튼
 
     [Header("Settings")]
     public float requiredHoldTime = 1.0f;
@@ -21,7 +23,7 @@ public class RadialMenuController : MonoBehaviour
     private float _currentHoldTime = 0f;
     private bool _isMenuOpen = false;
     private Vector3 _menuCenterPos;
-    private int _selectedItemIndex = -1; // 현재 선택된 인덱스 (-1: 없음, 0: 밥주기)
+    private int _selectedItemIndex = -1; // -1: 없음, 0: 밥주기, 1: 즉시밥주기, 2: 레벨초기화
 
     void Awake()
     {
@@ -70,42 +72,50 @@ public class RadialMenuController : MonoBehaviour
         
         if (dist > selectionDeadzone)
         {
-            // 중심에서 마우스의 방향(각도) 계산
             Vector3 dir = mousePos - _menuCenterPos;
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             if (angle < 0) angle += 360f;
 
-            // 현재는 상단(밥주기) 하나만 있으므로 60도~120도 사이면 선택으로 간주
-            if (angle >= 60f && angle <= 120f)
+            // 360도를 3등분 (각 120도)
+            // 0: 상단 (30 ~ 150도) - 밥주기
+            if (angle >= 30f && angle < 150f)
             {
                 _selectedItemIndex = 0;
-                HighlightButton(true);
             }
+            // 1: 좌하단 (150 ~ 270도) - 레벨 초기화
+            else if (angle >= 150f && angle < 270f)
+            {
+                _selectedItemIndex = 2;
+            }
+            // 2: 우하단 (270 ~ 30도) - 즉시 밥주기
             else
             {
-                _selectedItemIndex = -1;
-                HighlightButton(false);
+                _selectedItemIndex = 1;
             }
+            
+            HighlightButtons();
         }
         else
         {
             _selectedItemIndex = -1;
-            HighlightButton(false);
+            HighlightButtons();
         }
     }
 
-    void HighlightButton(bool highlight)
+    void HighlightButtons()
     {
         if (feedButton != null)
-        {
-            // 간단하게 버튼의 크기나 색상을 조절하여 피드백 제공
-            feedButton.transform.localScale = highlight ? Vector3.one * 1.2f : Vector3.one;
-        }
+            feedButton.transform.localScale = (_selectedItemIndex == 0) ? Vector3.one * 1.3f : Vector3.one;
+        
+        if (instantFeedButton != null)
+            instantFeedButton.transform.localScale = (_selectedItemIndex == 1) ? Vector3.one * 1.3f : Vector3.one;
+
+        if (resetButton != null)
+            resetButton.transform.localScale = (_selectedItemIndex == 2) ? Vector3.one * 1.3f : Vector3.one;
     }
 
     public void CancelLongPress()
     {
-        // 마우스를 뗄 때 호출됨
         if (_isMenuOpen)
         {
             SubmitSelection();
@@ -119,13 +129,12 @@ public class RadialMenuController : MonoBehaviour
 
     void SubmitSelection()
     {
-        if (_selectedItemIndex == 0)
+        switch (_selectedItemIndex)
         {
-            OnClickFeed();
-        }
-        else
-        {
-            CloseMenu();
+            case 0: OnClickFeed(); break;
+            case 1: OnClickInstantFeed(); break;
+            case 2: OnClickReset(); break;
+            default: CloseMenu(); break;
         }
     }
 
@@ -138,8 +147,7 @@ public class RadialMenuController : MonoBehaviour
         menuRoot.SetActive(true);
         menuRoot.transform.position = position;
         progressGauge.gameObject.SetActive(false);
-        
-        Debug.Log("방사형 메뉴가 열렸습니다. 항목을 선택하려면 드래그하세요.");
+        HighlightButtons();
     }
 
     public void CloseMenu()
@@ -149,13 +157,24 @@ public class RadialMenuController : MonoBehaviour
         _currentHoldTime = 0f;
     }
 
-    // 버튼에서 호출할 함수 (예: 밥 주기)
     public void OnClickFeed()
     {
         if (PetGrowthController.Instance != null)
-        {
-            PetGrowthController.Instance.TryFeed();
-        }
+            PetGrowthController.Instance.TryFeed(false);
+        CloseMenu();
+    }
+
+    public void OnClickInstantFeed()
+    {
+        if (PetGrowthController.Instance != null)
+            PetGrowthController.Instance.TryFeed(true);
+        CloseMenu();
+    }
+
+    public void OnClickReset()
+    {
+        if (PetGrowthController.Instance != null)
+            PetGrowthController.Instance.ResetLevel();
         CloseMenu();
     }
 }

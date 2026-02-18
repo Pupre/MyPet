@@ -10,8 +10,8 @@
 # MemoryCaptures can get large
 /[Mm]emoryCaptures/
 
-# Asset meta files for unused assets
-*.meta
+# Asset meta files must be tracked in Unity
+# *.meta
 
 # VS/MonoDevelop-generated files
 [Vv]S[Ee]xtensions/

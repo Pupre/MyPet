@@ -12,10 +12,19 @@ public class PetOverlayController : MonoBehaviour
         _petMovement = GetComponent<PetMovement>();
     }
 
+    private PetState _stateBeforeInteraction;
+    private float _raycastTimer = 0f;
+    private const float RAYCAST_INTERVAL = 0.05f; // 20fps 정도로 레이캐스트 빈도 낮춤 (CPU 절약)
+    private bool _lastHoverState = false;
+
     void Start()
     {
+        // CPU 최적화: 프레임 제한 (투명 창 모드에서는 무제한으로 돌아가서 CPU를 많이 먹을 수 있음)
+        Application.targetFrameRate = 60;
+
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
         // 1. 카메라 배경 설정 강제화 (실수 방지)
+        // ... (생략 가능하지만 context 유지를 위해 포함)
         var cam = GetComponent<Camera>();
         if (cam == null) cam = Camera.main;
         if (cam != null)
@@ -67,19 +76,29 @@ public class PetOverlayController : MonoBehaviour
 
         if (Camera.main == null) return;
 
-        Ray ray = Camera.main.ScreenPointToRay(mousePos);
-        RaycastHit hit;
-        bool isHovering = Physics.Raycast(ray, out hit, 100f);
-        
-        // 시각적 확인을 위한 레이 (조금 더 연하게 유지)
-        Debug.DrawRay(ray.origin, ray.direction * 100f, isHovering ? Color.green : new Color(1, 0, 0, 0.2f));
+        // --- 레이캐스트 최적화 ---
+        _raycastTimer += Time.deltaTime;
+        bool isHovering = _lastHoverState;
 
-        // 상태가 바뀔 때만 API 호출 (롱프레스 중에는 클릭 통과 모드 전환 방지)
+        if (_raycastTimer >= RAYCAST_INTERVAL)
+        {
+            _raycastTimer = 0f;
+            Ray ray = Camera.main.ScreenPointToRay(mousePos);
+            RaycastHit hit;
+            isHovering = Physics.Raycast(ray, out hit, 100f);
+            _lastHoverState = isHovering;
+            
+            // 시각적 확인을 위한 레이
+            Debug.DrawRay(ray.origin, ray.direction * 100f, isHovering ? Color.green : new Color(1, 0, 0, 0.2f));
+        }
+
+        // --- 상태 체크 ---
         bool isMouseHeld = Input.GetMouseButton(0);
         #if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
         if (UnityEngine.InputSystem.Mouse.current != null) isMouseHeld = UnityEngine.InputSystem.Mouse.current.leftButton.isPressed;
         #endif
 
+        // 클릭 통과 모드 최적화 (상태가 변할 때만 API 호출)
         if (isHovering && isClickThrough)
         {
             isClickThrough = false;
@@ -87,7 +106,7 @@ public class PetOverlayController : MonoBehaviour
             UpdateClickThrough();
             #endif
         }
-        else if (!isHovering && !isClickThrough && !isMouseHeld) // 마우스를 떼고 나서만 클릭 통과 모드 복구
+        else if (!isHovering && !isClickThrough && !isMouseHeld) 
         {
             isClickThrough = true;
             #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
@@ -95,7 +114,7 @@ public class PetOverlayController : MonoBehaviour
             #endif
         }
 
-        // --- 롱프레스 및 방사형 메뉴 연동 ---
+        // --- 마우스 다운/업 (롱프레스 및 붙잡기) ---
         bool isMouseDown = Input.GetMouseButtonDown(0);
         bool isMouseUp = Input.GetMouseButtonUp(0);
         #if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
@@ -107,24 +126,36 @@ public class PetOverlayController : MonoBehaviour
 
         if (isHovering && isMouseDown)
         {
+            Debug.Log("[Interaction] Mouse Down Detected on Pet");
+            if (PetStateMachine.Instance != null)
+                _stateBeforeInteraction = PetStateMachine.Instance.GetCurrentState();
+
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.StartLongPress();
 
+            if (PetStateMachine.Instance != null)
+                PetStateMachine.Instance.ChangeState(PetState.Struggling);
+            
             if (_petMovement != null) _petMovement.isLocked = true;
         }
         
         if (isMouseHeld)
         {
             if (RadialMenuController.Instance != null)
-                RadialMenuController.Instance.UpdateLongPress(mousePos); // 보정된 좌표 전달
+                RadialMenuController.Instance.UpdateLongPress(mousePos); 
         }
 
         if (isMouseUp)
         {
+            Debug.Log("[Interaction] Mouse Up Detected");
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.CancelLongPress();
 
-            if (_petMovement != null) _petMovement.isLocked = false;
+            if (PetStateMachine.Instance != null)
+            {
+                // 이전 상태로 복구 (이동 중이었다면 다시 걷기 애니메이션이 나오며 이동 재개)
+                PetStateMachine.Instance.ChangeState(_stateBeforeInteraction, false);
+            }
         }
     }
 
