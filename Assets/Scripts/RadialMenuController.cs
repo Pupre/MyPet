@@ -20,10 +20,26 @@ public class RadialMenuController : MonoBehaviour
     public float requiredHoldTime = 1.0f;
     public float selectionDeadzone = 50f; // 중심에서 이 거리 이상 나가야 선택됨
     
+    [Header("UI Glass Effects")]
+    public UnityEngine.UI.Image menuBackground;
+    private Material _glassMaterial;
+    private static readonly int GrainAmount = Shader.PropertyToID("_GrainAmount");
+    private static readonly int EdgeHighlight = Shader.PropertyToID("_EdgeHighlight");
+
     private float _currentHoldTime = 0f;
     private bool _isMenuOpen = false;
     private Vector3 _menuCenterPos;
     private int _selectedItemIndex = -1; // -1: 없음, 0: 밥주기, 1: 즉시밥주기, 2: 레벨초기화
+
+    void Start()
+    {
+        if (menuBackground != null)
+        {
+            // 인스턴스화하여 개별 제어 가능하게 함
+            _glassMaterial = new Material(menuBackground.material);
+            menuBackground.material = _glassMaterial;
+        }
+    }
 
     void Awake()
     {
@@ -138,7 +154,18 @@ public class RadialMenuController : MonoBehaviour
         }
     }
 
-    void OpenMenu(Vector3 position)
+    private Coroutine _menuAnimation;
+
+    public void CloseMenu()
+    {
+        if (!_isMenuOpen) return;
+        
+        _currentHoldTime = 0f; // 홀드 시간 초기화
+        if (_menuAnimation != null) StopCoroutine(_menuAnimation);
+        _menuAnimation = StartCoroutine(AnimateMenu(false));
+    }
+
+    private void OpenMenu(Vector3 position)
     {
         _isMenuOpen = true;
         _menuCenterPos = position;
@@ -147,14 +174,69 @@ public class RadialMenuController : MonoBehaviour
         menuRoot.SetActive(true);
         menuRoot.transform.position = position;
         progressGauge.gameObject.SetActive(false);
+        
+        if (_menuAnimation != null) StopCoroutine(_menuAnimation);
+        _menuAnimation = StartCoroutine(AnimateMenu(true));
+        
         HighlightButtons();
     }
 
-    public void CloseMenu()
+    private IEnumerator AnimateMenu(bool open)
     {
-        _isMenuOpen = false;
-        menuRoot.SetActive(false);
-        _currentHoldTime = 0f;
+        float duration = 0.25f;
+        float elapsed = 0f;
+        
+        Vector3 startScale = open ? Vector3.zero : Vector3.one;
+        Vector3 endScale = open ? Vector3.one : Vector3.zero;
+        
+        CanvasGroup cg = menuRoot.GetComponent<CanvasGroup>();
+        if (cg == null) cg = menuRoot.AddComponent<CanvasGroup>();
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            if (open)
+            {
+                // Overshoot (Back Out) Easing: 1.1배까지 커졌다가 1.0으로 안착
+                float overshootT = Mathf.Sin(t * Mathf.PI * 0.5f); // 기본 Sine Ease Out
+                float scale = open ? 
+                    (t < 0.7f ? Mathf.Lerp(0, 1.15f, t / 0.7f) : Mathf.Lerp(1.15f, 1f, (t - 0.7f) / 0.3f)) : 
+                    Mathf.Lerp(1, 0, t);
+                
+                menuRoot.transform.localScale = Vector3.one * scale;
+                cg.alpha = t;
+
+                if (_glassMaterial != null)
+                {
+                    _glassMaterial.SetFloat(GrainAmount, Mathf.Lerp(0, 0.05f, t));
+                    _glassMaterial.SetFloat(EdgeHighlight, Mathf.Lerp(0, 0.8f, t));
+                }
+            }
+            else
+            {
+                menuRoot.transform.localScale = Vector3.Lerp(startScale, endScale, t);
+                cg.alpha = 1 - t;
+
+                if (_glassMaterial != null)
+                {
+                    _glassMaterial.SetFloat(GrainAmount, Mathf.Lerp(0.05f, 0, t));
+                    _glassMaterial.SetFloat(EdgeHighlight, Mathf.Lerp(0.8f, 0, t));
+                }
+            }
+            
+            yield return null;
+        }
+
+        menuRoot.transform.localScale = endScale;
+        cg.alpha = open ? 1f : 0f;
+        
+        if (!open)
+        {
+            menuRoot.SetActive(false);
+            _isMenuOpen = false;
+        }
     }
 
     public void OnClickFeed()
