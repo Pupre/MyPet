@@ -46,8 +46,12 @@ public class PetGrowthController : MonoBehaviour
         
         if (isInstant)
         {
+            if (PetNeedsController.Instance != null)
+            {
+                PetNeedsController.Instance.RestoreHunger(100f);
+            }
             AddGrowth(GrowthRatePerFeed);
-            Debug.Log("[Cheat] 즉시 밥을 주었습니다!");
+            Debug.Log("[Cheat] 즉시 밥을 주었습니다! 허기가 100%가 되었습니다.");
             return true;
         }
 
@@ -62,8 +66,15 @@ public class PetGrowthController : MonoBehaviour
         if (currentData.LastFeedTime < lastResetTime)
         {
             currentData.LastFeedTime = now;
+            
+            // 허기 시스템과 연동하여 허기를 50% 채워줌
+            if (PetNeedsController.Instance != null)
+            {
+                PetNeedsController.Instance.RestoreHunger(50f);
+            }
+
             AddGrowth(GrowthRatePerFeed);
-            Debug.Log("펫에게 밥을 주었습니다! 성장이 진행됩니다.");
+            Debug.Log("펫에게 밥을 주었습니다! 허기가 채워지고 성장이 진행됩니다.");
             return true;
         }
 
