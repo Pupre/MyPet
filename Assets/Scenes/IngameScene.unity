@@ -799,6 +799,7 @@ GameObject:
   - component: {fileID: 1040170626}
   - component: {fileID: 1040170625}
   - component: {fileID: 1040170630}
+  - component: {fileID: 1040170634}
   - component: {fileID: 1040170631}
   - component: {fileID: 1040170633}
   - component: {fileID: 1040170632}
@@ -936,8 +937,10 @@ MonoBehaviour:
     petName: Unnamed Pet
     currentStage: 0
     growthProgress: 0
+    hunger: 100
     affectionLevel: 0
     lastFeedTimeStr: "0001-01-01 \uC624\uC804 12:00:00"
+    lastUpdateTimeStr: "2026-02-20 \uC624\uD6C4 1:52:26"
   petModel: {fileID: 0}
 --- !u!114 &1040170631
 MonoBehaviour:
@@ -978,6 +981,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PetVisualManager
   petDefinition: {fileID: 11400000, guid: 12f4d0a5b0198ce4581716596189364b, type: 2}
+--- !u!114 &1040170634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1040170624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb6fda8b4c5be994fb5052c4bb9f5614, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PetNeedsController
+  hungerDepletionPerHour: 4
+  testDepletionMultiplier: 1
 --- !u!1 &1083803744
 GameObject:
   m_ObjectHideFlags: 0
