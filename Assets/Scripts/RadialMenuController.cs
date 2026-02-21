@@ -15,6 +15,7 @@ public class RadialMenuController : MonoBehaviour
     public GameObject feedButton; // 밥 주기 아이콘/버튼
     public GameObject instantFeedButton; // 즉시 밥 주기 아이콘/버튼
     public GameObject resetButton; // 레벨 초기화 아이콘/버튼
+    public GameObject quitButton; // 앱 종료 아이콘/버튼
 
     [Header("Settings")]
     public float requiredHoldTime = 1.0f;
@@ -92,18 +93,23 @@ public class RadialMenuController : MonoBehaviour
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             if (angle < 0) angle += 360f;
 
-            // 360도를 3등분 (각 120도)
-            // 0: 상단 (30 ~ 150도) - 밥주기
-            if (angle >= 30f && angle < 150f)
+            // 360도를 4등분 (각 90도)
+            // 0: 상단 (45 ~ 135도) - 밥주기
+            if (angle >= 45f && angle < 135f)
             {
                 _selectedItemIndex = 0;
             }
-            // 1: 좌하단 (150 ~ 270도) - 레벨 초기화
-            else if (angle >= 150f && angle < 270f)
+            // 1: 좌측 (135 ~ 225도) - 레벨 초기화
+            else if (angle >= 135f && angle < 225f)
             {
                 _selectedItemIndex = 2;
             }
-            // 2: 우하단 (270 ~ 30도) - 즉시 밥주기
+            // 2: 하단 (225 ~ 315도) - 앱 종료
+            else if (angle >= 225f && angle < 315f)
+            {
+                _selectedItemIndex = 3;
+            }
+            // 3: 우측 (315 ~ 45도) - 즉시 밥주기
             else
             {
                 _selectedItemIndex = 1;
@@ -128,6 +134,9 @@ public class RadialMenuController : MonoBehaviour
 
         if (resetButton != null)
             resetButton.transform.localScale = (_selectedItemIndex == 2) ? Vector3.one * 1.3f : Vector3.one;
+
+        if (quitButton != null)
+            quitButton.transform.localScale = (_selectedItemIndex == 3) ? Vector3.one * 1.3f : Vector3.one;
     }
 
     public void CancelLongPress()
@@ -150,8 +159,19 @@ public class RadialMenuController : MonoBehaviour
             case 0: OnClickFeed(); break;
             case 1: OnClickInstantFeed(); break;
             case 2: OnClickReset(); break;
+            case 3: OnClickQuit(); break;
             default: CloseMenu(); break;
         }
+    }
+
+    public void OnClickQuit()
+    {
+        Debug.Log("[System] Application Quit requested via Radial Menu.");
+        Application.Quit();
+        
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
     }
 
     private Coroutine _menuAnimation;
