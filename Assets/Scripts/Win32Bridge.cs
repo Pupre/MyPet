@@ -58,17 +58,66 @@ public class Win32Bridge : MonoBehaviour
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
 
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
+
+    [DllImport("user32.dll")]
+    public static extern short GetAsyncKeyState(int vKey);
+
+    [DllImport("user32.dll")]
+    public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+    [DllImport("user32.dll")]
+    public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
     [DllImport("user32.dll")]
     public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    public struct NOTIFYICONDATA
+    {
+        public int cbSize;
+        public IntPtr hWnd;
+        public int uID;
+        public int uFlags;
+        public int uCallbackMessage;
+        public IntPtr hIcon;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string szTip;
+        public int dwState;
+        public int dwStateMask;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+        public string szInfo;
+        public int uTimeoutOrVersion;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+        public string szInfoTitle;
+        public int dwInfoFlags;
+    }
+
+    [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+    public static extern bool Shell_NotifyIcon(int dwMessage, [In] ref NOTIFYICONDATA lpData);
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     public const int GWL_EXSTYLE = -20;
     public const int GWL_STYLE = -16;
     public const uint WS_EX_LAYERED = 0x00080000;
     public const uint WS_EX_TRANSPARENT = 0x00000020;
+    public const uint WS_EX_TOOLWINDOW = 0x00000080; // 작업표시줄 숨기기
     public const uint LWA_COLORKEY = 0x00000001;
     public const uint LWA_ALPHA = 0x00000002;
     public const uint WS_POPUP = 0x80000000;
     public const uint WS_VISIBLE = 0x10000000;
+
+    public const int NIM_ADD = 0x00;
+    public const int NIM_MODIFY = 0x01;
+    public const int NIM_DELETE = 0x02;
+    public const int NIF_MESSAGE = 0x01;
+    public const int NIF_ICON = 0x02;
+    public const int NIF_TIP = 0x04;
+    public const int WM_USER = 0x0400;
+    public const int WM_TRAYICON = WM_USER + 1;
 
     public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
 
@@ -76,7 +125,16 @@ public class Win32Bridge : MonoBehaviour
     public const uint SWP_NOSIZE = 0x0001;
     public const uint SWP_SHOWWINDOW = 0x0040;
 
+    public const int SW_HIDE = 0;
+    public const int SW_SHOW = 5;
+
+    public const uint MOD_ALT = 0x0001;
+    public const uint MOD_CONTROL = 0x0002;
+    public const uint MOD_SHIFT = 0x0004;
+    public const uint MOD_WIN = 0x0008;
+
     private IntPtr _hWnd;
+    private const int HOTKEY_ID = 9000;
 
     void Awake()
     {
@@ -85,6 +143,20 @@ public class Win32Bridge : MonoBehaviour
 
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
         _hWnd = GetActiveWindow();
+        #endif
+    }
+
+    public void RegisterGlobalHotkey(uint modifiers, uint key)
+    {
+        #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+        RegisterHotKey(_hWnd, HOTKEY_ID, modifiers, key);
+        #endif
+    }
+
+    public void UnregisterGlobalHotkey()
+    {
+        #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+        UnregisterHotKey(_hWnd, HOTKEY_ID);
         #endif
     }
 
@@ -149,6 +221,27 @@ public class Win32Bridge : MonoBehaviour
         GetWindowRect(activeHWnd, out rect);
         return rect;
     }
+    public const uint SWP_FRAMECHANGED = 0x0020;
+
+    public void SetTaskbarIconVisible(bool visible)
+    {
+        #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+        if (_hWnd == IntPtr.Zero) _hWnd = GetActiveWindow();
+        if (_hWnd == IntPtr.Zero) _hWnd = GetForegroundWindow(); // Fallback
+        
+        uint exStyle = GetWindowLong(_hWnd, GWL_EXSTYLE);
+        if (visible)
+            SetWindowLong(_hWnd, GWL_EXSTYLE, exStyle & ~WS_EX_TOOLWINDOW);
+        else
+            SetWindowLong(_hWnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
+
+        // 프레임 변경 알림 및 스타일 갱신 강제화
+        SetWindowPos(_hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        #endif
+    }
+
+    public const uint SWP_NOZORDER = 0x0004;
+
     public Vector3 GetMousePosition()
     {
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN

@@ -2,20 +2,23 @@ using UnityEngine;
 
 public class PetOverlayController : MonoBehaviour
 {
-    public static PetOverlayController Instance { get; private set; }
-    public bool isClickThrough = false; // 시작할 때는 클릭을 받도록 설정
+    public bool isClickThrough = false; 
     private PetMovement _petMovement;
+    private PetStateMachine _stateMachine;
+    private PetGrowthController _growthController;
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
         _petMovement = GetComponent<PetMovement>();
+        _stateMachine = GetComponent<PetStateMachine>();
+        _growthController = GetComponent<PetGrowthController>();
     }
 
     private PetState _stateBeforeInteraction;
     private float _raycastTimer = 0f;
-    private const float RAYCAST_INTERVAL = 0.05f; // 20fps 정도로 레이캐스트 빈도 낮춤 (CPU 절약)
+    private const float RAYCAST_INTERVAL = 0.05f; 
     private bool _lastHoverState = false;
+    private bool _isInteractingWithThisPet = false; // 이 펫이 현재 메뉴를 독점하고 있는지 여부
 
     void Start()
     {
@@ -35,19 +38,13 @@ public class PetOverlayController : MonoBehaviour
         }
 
         // 2. Win32 API 호출 (순서 중요)
-        Win32Bridge.Instance.SetTransparency(true);
-        
-        // 3. 방사형 메뉴 대상 설정
-        if (RadialMenuController.Instance != null)
-        {
-            RadialMenuController.Instance.targetPet = this.transform;
-        }
-
         // 크로마키 적용: 검은색(0,0,0)을 투명하게 처리
         // DwmExtend...가 실패하거나 URP가 검은색을 뱉을 때를 대비한 안전장치
-        Win32Bridge.Instance.SetColorKey(new Color32(0, 0, 0, 255));
-        
-        Win32Bridge.Instance.SetAlwaysOnTop();
+        if (Win32Bridge.Instance != null)
+        {
+            Win32Bridge.Instance.SetColorKey(new Color32(0, 0, 0, 255));
+            Win32Bridge.Instance.SetAlwaysOnTop();
+        }
         UpdateClickThrough();
         
         // 타이밍 이슈 대비: 잠시 후 재적용
@@ -85,7 +82,15 @@ public class PetOverlayController : MonoBehaviour
             _raycastTimer = 0f;
             Ray ray = Camera.main.ScreenPointToRay(mousePos);
             RaycastHit hit;
-            isHovering = Physics.Raycast(ray, out hit, 100f);
+            if (Physics.Raycast(ray, out hit, 100f))
+            {
+                // 레이캐스트에 맞은 오브젝트가 이 펫(나 자신 혹은 하위 모델)인지 확인
+                isHovering = hit.transform.IsChildOf(this.transform);
+            }
+            else
+            {
+                isHovering = false;
+            }
             _lastHoverState = isHovering;
             
             // 시각적 확인을 위한 레이
@@ -126,35 +131,41 @@ public class PetOverlayController : MonoBehaviour
 
         if (isHovering && isMouseDown)
         {
-            Debug.Log("[Interaction] Mouse Down Detected on Pet");
-            if (PetStateMachine.Instance != null)
-                _stateBeforeInteraction = PetStateMachine.Instance.GetCurrentState();
+            Debug.Log($"[Interaction] Mouse Down Detected on Pet: {gameObject.name}");
+            _isInteractingWithThisPet = true; // 주도권 획득
+            
+            if (_stateMachine != null)
+                _stateBeforeInteraction = _stateMachine.GetCurrentState();
 
             if (RadialMenuController.Instance != null)
+            {
+                RadialMenuController.Instance.targetPet = this.transform; 
                 RadialMenuController.Instance.StartLongPress();
+            }
 
-            if (PetStateMachine.Instance != null)
-                PetStateMachine.Instance.ChangeState(PetState.Struggling);
+            if (_stateMachine != null)
+                _stateMachine.ChangeState(PetState.Struggling);
             
             if (_petMovement != null) _petMovement.isLocked = true;
         }
         
-        if (isMouseHeld)
+        if (isMouseHeld && _isInteractingWithThisPet)
         {
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.UpdateLongPress(mousePos); 
         }
 
-        if (isMouseUp)
+        if (isMouseUp && _isInteractingWithThisPet)
         {
-            Debug.Log("[Interaction] Mouse Up Detected");
+            Debug.Log($"[Interaction] Mouse Up Detected on Pet: {gameObject.name}");
+            _isInteractingWithThisPet = false; // 주도권 해제
+
             if (RadialMenuController.Instance != null)
                 RadialMenuController.Instance.CancelLongPress();
 
-            if (PetStateMachine.Instance != null)
+            if (_stateMachine != null)
             {
-                // 이전 상태로 복구 (이동 중이었다면 다시 걷기 애니메이션이 나오며 이동 재개)
-                PetStateMachine.Instance.ChangeState(_stateBeforeInteraction, false);
+                _stateMachine.ChangeState(_stateBeforeInteraction, false);
             }
         }
     }

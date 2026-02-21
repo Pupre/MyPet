@@ -11,6 +11,14 @@ public class PetMovement : MonoBehaviour
     public bool isLocked = false; // 상호작용 중 이동 정지용
     public float changeTargetInterval = 3.0f;
     private Vector3 _randomTarget;
+    private PetNeedsController _needsController;
+    private PetStateMachine _stateMachine;
+
+    void Awake()
+    {
+        _needsController = GetComponent<PetNeedsController>();
+        _stateMachine = GetComponent<PetStateMachine>();
+    }
 
     void Start()
     {
@@ -23,9 +31,9 @@ public class PetMovement : MonoBehaviour
 
         // 허기(Hunger)에 따른 속도 감소 로직
         float hungerMultiplier = 1.0f;
-        if (PetNeedsController.Instance != null)
+        if (_needsController != null)
         {
-            float hunger = PetNeedsController.Instance.GetHungerNormalized();
+            float hunger = _needsController.GetHungerNormalized();
             // 허기가 20% 미만이면 속도를 50%로 줄임
             if (hunger < 0.2f) hungerMultiplier = 0.5f;
         }
@@ -60,9 +68,9 @@ public class PetMovement : MonoBehaviour
     private void OnTargetReached()
     {
         // 목표에 도달하면 상태 머신에게 알려서 다음 행동을 결정하게 함
-        if (PetStateMachine.Instance != null && PetStateMachine.Instance.GetCurrentState() == PetState.Move)
+        if (_stateMachine != null && _stateMachine.GetCurrentState() == PetState.Move)
         {
-            PetStateMachine.Instance.ChangeState(PetState.Idle);
+            _stateMachine.ChangeState(PetState.Idle);
         }
     }
 

@@ -241,22 +241,31 @@ public class RadialMenuController : MonoBehaviour
 
     public void OnClickFeed()
     {
-        if (PetGrowthController.Instance != null)
-            PetGrowthController.Instance.TryFeed(false);
+        if (targetPet != null)
+        {
+            var controller = targetPet.GetComponent<PetGrowthController>();
+            if (controller != null) controller.TryFeed(false);
+        }
         CloseMenu();
     }
 
     public void OnClickInstantFeed()
     {
-        if (PetGrowthController.Instance != null)
-            PetGrowthController.Instance.TryFeed(true);
+        if (targetPet != null)
+        {
+            var controller = targetPet.GetComponent<PetGrowthController>();
+            if (controller != null) controller.TryFeed(true);
+        }
         CloseMenu();
     }
 
     public void OnClickReset()
     {
-        if (PetGrowthController.Instance != null)
-            PetGrowthController.Instance.ResetLevel();
+        if (targetPet != null)
+        {
+            var controller = targetPet.GetComponent<PetGrowthController>();
+            if (controller != null) controller.ResetLevel();
+        }
         CloseMenu();
     }
 }

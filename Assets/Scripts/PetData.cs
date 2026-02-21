@@ -3,6 +3,7 @@ using System;
 [Serializable]
 public class PetData
 {
+    public string petID = "0"; // 고유 ID (저장 파일명 구분용)
     public string petName = "New Pet";
     public int currentStage = 0; // 0~5단계
     public float growthProgress = 0f; // 현재 단계에서의 성장률 (0~100)

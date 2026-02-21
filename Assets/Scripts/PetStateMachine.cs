@@ -4,17 +4,18 @@ public enum PetState { Idle, Move, Interact, Eat, Struggling }
 
 public class PetStateMachine : MonoBehaviour
 {
-    public static PetStateMachine Instance { get; private set; }
-
     [SerializeField] private PetState currentState;
     private PetMovement _movement;
+    private PetVisualManager _visualManager;
+    private PetGrowthController _growthController;
     private float _stateTimer;
     private float _nextChangeTime;
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
         _movement = GetComponent<PetMovement>();
+        _visualManager = GetComponent<PetVisualManager>();
+        _growthController = GetComponent<PetGrowthController>();
     }
 
     void Start()
@@ -71,9 +72,9 @@ public class PetStateMachine : MonoBehaviour
 
     private bool TryPlayRandomSpecialAction()
     {
-        if (PetVisualManager.Instance == null || PetVisualManager.Instance.petDefinition == null) return false;
+        if (_visualManager == null || _visualManager.petDefinition == null || _growthController == null) return false;
 
-        var info = PetVisualManager.Instance.petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+        var info = _visualManager.petDefinition.GetStageInfo(_growthController.currentData.currentStage);
         if (info == null || info.specialActions == null || info.specialActions.Count == 0) return false;
 
         // 랜덤하게 하나 선택
@@ -81,7 +82,7 @@ public class PetStateMachine : MonoBehaviour
         string actionName = info.specialActions[index].actionName;
 
         ChangeState(PetState.Interact); // Interact 상태를 빌려씀 (정지 상태)
-        PetVisualManager.Instance.PlayAction(actionName);
+        _visualManager.PlayAction(actionName);
         Debug.Log($"[AI] 특수 동작 재생: {actionName}");
         return true;
     }
@@ -93,7 +94,7 @@ public class PetStateMachine : MonoBehaviour
 
     public void ChangeState(PetState newState, bool resetTarget = true)
     {
-        if (PetVisualManager.Instance == null) return;
+        if (_visualManager == null) return;
 
         currentState = newState;
         _stateTimer = 0f; // 상태 변경 시 타이머 초기화
@@ -101,12 +102,12 @@ public class PetStateMachine : MonoBehaviour
         switch (newState)
         {
             case PetState.Idle:
-                PetVisualManager.Instance.SetAnimationState("isMoving", false);
+                _visualManager.SetAnimationState("isMoving", false);
                 if (_movement != null) _movement.isLocked = true;
                 break;
 
             case PetState.Move:
-                PetVisualManager.Instance.SetAnimationState("isMoving", true);
+                _visualManager.SetAnimationState("isMoving", true);
                 if (_movement != null)
                 {
                     _movement.isLocked = false;
@@ -118,26 +119,26 @@ public class PetStateMachine : MonoBehaviour
                 break;
 
             case PetState.Interact:
-                PetVisualManager.Instance.TriggerAnimation("interact");
+                _visualManager.TriggerAnimation("interact");
                 if (_movement != null) _movement.isLocked = true;
                 break;
 
             case PetState.Eat:
-                PetVisualManager.Instance.TriggerAnimation("eat");
+                _visualManager.TriggerAnimation("eat");
                 if (_movement != null) _movement.isLocked = true;
                 break;
 
             case PetState.Struggling:
-                if (PetVisualManager.Instance.petDefinition != null)
+                if (_visualManager != null && _visualManager.petDefinition != null && _growthController != null)
                 {
-                    PetStageInfo info = PetVisualManager.Instance.petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+                    PetStageInfo info = _visualManager.petDefinition.GetStageInfo(_growthController.currentData.currentStage);
                     if (info != null && info.is2D && info.struggleSpriteSheet != null)
                     {
-                        PetVisualManager.Instance.UpdateSpriteSheet(info.struggleSpriteSheet, info.struggleFrameCount);
+                        _visualManager.UpdateSpriteSheet(info.struggleSpriteSheet, info.struggleFrameCount);
                     }
                     else if (info != null && !info.is2D)
                     {
-                        PetVisualManager.Instance.TriggerAnimation("struggle");
+                        _visualManager.TriggerAnimation("struggle");
                     }
                 }
                 if (_movement != null) _movement.isLocked = true;

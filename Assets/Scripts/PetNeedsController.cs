@@ -3,22 +3,19 @@ using System;
 
 public class PetNeedsController : MonoBehaviour
 {
-    public static PetNeedsController Instance { get; private set; }
-
     [Header("Hunger Settings")]
-    public float hungerDepletionPerHour = 4.0f; // 1시간에 4% 감소 (약 25시간이면 0)
-    public float testDepletionMultiplier = 1.0f; // 테스트용 배속
+    public float hungerDepletionPerHour = 4.0f; 
+    public float testDepletionMultiplier = 1.0f; 
 
     private PetGrowthController _growthController;
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
+        _growthController = GetComponent<PetGrowthController>();
     }
 
     void Start()
     {
-        _growthController = PetGrowthController.Instance;
         CalculateOfflineDepletion();
     }
 

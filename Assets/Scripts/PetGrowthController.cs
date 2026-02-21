@@ -3,9 +3,10 @@ using System;
 
 public class PetGrowthController : MonoBehaviour
 {
-    public static PetGrowthController Instance { get; private set; }
-
+    public string petID = "0";
     public PetData currentData;
+    private PetVisualManager _visualManager;
+    private PetNeedsController _needsController;
     
     // 이펙터 수정을 방지하기 위해 상수로 하드코딩
     private const float GrowthRatePerFeed = 100f; // 밥 한 번에 100% 성장 (테스트 모드)
@@ -18,9 +19,8 @@ public class PetGrowthController : MonoBehaviour
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
-
+        _visualManager = GetComponent<PetVisualManager>();
+        _needsController = GetComponent<PetNeedsController>();
         LoadPetData();
     }
 
@@ -31,12 +31,13 @@ public class PetGrowthController : MonoBehaviour
 
     public void LoadPetData()
     {
-        currentData = SaveManager.Load();
+        currentData = SaveManager.Load(petID);
     }
 
     public void SavePetData()
     {
-        SaveManager.Save(currentData);
+        if (currentData != null)
+            SaveManager.Save(currentData);
     }
 
     // 밥 주기 시도
@@ -46,9 +47,9 @@ public class PetGrowthController : MonoBehaviour
         
         if (isInstant)
         {
-            if (PetNeedsController.Instance != null)
+            if (_needsController != null)
             {
-                PetNeedsController.Instance.RestoreHunger(100f);
+                _needsController.RestoreHunger(100f);
             }
             AddGrowth(GrowthRatePerFeed);
             Debug.Log("[Cheat] 즉시 밥을 주었습니다! 허기가 100%가 되었습니다.");
@@ -68,9 +69,9 @@ public class PetGrowthController : MonoBehaviour
             currentData.LastFeedTime = now;
             
             // 허기 시스템과 연동하여 허기를 50% 채워줌
-            if (PetNeedsController.Instance != null)
+            if (_needsController != null)
             {
-                PetNeedsController.Instance.RestoreHunger(50f);
+                _needsController.RestoreHunger(50f);
             }
 
             AddGrowth(GrowthRatePerFeed);
@@ -119,9 +120,9 @@ public class PetGrowthController : MonoBehaviour
     public void ApplyGrowthVisuals()
     {
         // 1. 비주얼 매니저에게 모델 갱신 요청 (새로운 시스템)
-        if (PetVisualManager.Instance != null)
+        if (_visualManager != null)
         {
-            PetVisualManager.Instance.RefreshVisuals();
+            _visualManager.RefreshVisuals();
         }
 
         if (petModel == null) petModel = this.transform;

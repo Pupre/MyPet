@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class PetVisualManager : MonoBehaviour
 {
-    public static PetVisualManager Instance { get; private set; }
-
     public PetDefinition petDefinition;
     private GameObject _currentModel;
     private Animator _animator;
+    private PetGrowthController _growthController;
+    private PetStateMachine _stateMachine;
     
     [Header("2D Support")]
     private SpriteRenderer _spriteRenderer;
@@ -17,7 +17,8 @@ public class PetVisualManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
+        _growthController = GetComponent<PetGrowthController>();
+        _stateMachine = GetComponent<PetStateMachine>();
     }
 
     void Start()
@@ -30,9 +31,9 @@ public class PetVisualManager : MonoBehaviour
     /// </summary>
     public void RefreshVisuals()
     {
-        if (PetGrowthController.Instance == null || petDefinition == null) return;
+        if (_growthController == null || petDefinition == null) return;
 
-        int currentStage = PetGrowthController.Instance.currentData.currentStage;
+        int currentStage = _growthController.currentData.currentStage;
         PetStageInfo info = petDefinition.GetStageInfo(currentStage);
 
         Debug.Log($"[Visual Debug] 갱신 시도 - 현재 단계: {currentStage}, 찾은 정보 있음: {info != null}");
@@ -112,10 +113,10 @@ public class PetVisualManager : MonoBehaviour
 
     void Update()
     {
-        if (petDefinition == null || PetGrowthController.Instance == null || PetGrowthController.Instance.currentData == null) 
+        if (petDefinition == null || _growthController == null || _growthController.currentData == null) 
             return;
 
-        PetStageInfo info = petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+        PetStageInfo info = petDefinition.GetStageInfo(_growthController.currentData.currentStage);
         
         if (info != null && info.is2D)
         {
@@ -130,7 +131,7 @@ public class PetVisualManager : MonoBehaviour
 
         // 펫이 움직이고 있다면 진행 방향에 따라 좌우 반전
         // 여기서 transform.parent는 펫의 실제 이동 주체(PetMovement가 붙은 오브젝트)임
-        if (PetStateMachine.Instance != null && PetStateMachine.Instance.GetCurrentState() == PetState.Move)
+        if (_stateMachine != null && _stateMachine.GetCurrentState() == PetState.Move)
         {
             // PetMovement의 위치 변화를 직접 감시해서 방향 결정
             // (localScale을 뒤집지 않고 spriteRenderer.flipX를 사용하면 자식 오브젝트 관리가 편함)
@@ -202,8 +203,8 @@ public class PetVisualManager : MonoBehaviour
     /// </summary>
     public void PlayAction(string actionName)
     {
-        if (petDefinition == null) return;
-        PetStageInfo info = petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+        if (petDefinition == null || _growthController == null) return;
+        PetStageInfo info = petDefinition.GetStageInfo(_growthController.currentData.currentStage);
         if (info == null) return;
 
         if (info.is2D)
@@ -227,9 +228,9 @@ public class PetVisualManager : MonoBehaviour
     {
         if (_animator != null) _animator.SetBool(paramName, value);
 
-        if (petDefinition != null)
+        if (petDefinition != null && _growthController != null)
         {
-            PetStageInfo info = petDefinition.GetStageInfo(PetGrowthController.Instance.currentData.currentStage);
+            PetStageInfo info = petDefinition.GetStageInfo(_growthController.currentData.currentStage);
             if (info != null && info.is2D)
             {
                 if (paramName == "isMoving")
