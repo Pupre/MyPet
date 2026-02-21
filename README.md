@@ -17,32 +17,20 @@
 *   **방사형 메뉴 (Radial Menu)**: 글래스모피즘(Glassmorphism) 스타일의 UI 및 펫별 독립 대상 설정.
 *   **유연한 비주얼 시스템**: 2D 스프라이트 시트 및 3D 모델 프레임워크 동시 지원.
 
-### **3. 미해결 과제 (Incomplete - Urgent! 🛠️)**
-*   **Phase 7: 윈도우 시스템 통합 (NOT WORKING)**
-    *   `Win32Bridge.cs`를 통한 창 핸들(HWND) 획득은 성공함(Log 확인).
-    *   **원인 규명**: `Player.log` 분석 결과 `[Tray]` 관련 로그가 전혀 없음 -> `TrayIconManager`와 `HotkeyListener` 컴포넌트가 **씬(Scene)의 어떤 오브젝트에도 붙어있지 않거나 비활성화 상태**인 것이 확실함.
-    *   유니티 에디터에서는 안전을 위해 비활성화되어 있음.
-
----
-
-## �️ 필수 설정 체크리스트 (새 환경에서 확인!)
-
-새로운 환경에서 프로젝트를 열었을 때, **Phase 7(트레이, 투명화)**을 작동시키려면 반드시 다음을 확인하세요:
-
-1.  **GlobalSystem 오브젝트 (Hierarchy)**: `IngameScene` 내에서 이미 `Win32Bridge`가 붙어있는 오브젝트를 찾으세요. (아마 `GlobalSystem` 혹은 `Win32Bridge`라는 이름일 것입니다.)
-    *   그 오브젝트에 `TrayIconManager.cs`와 `HotkeyListener.cs` 스크립트를 드래그 앤 드롭으로 추가하세요.
-    *   **이제 한 오브젝트에 3개(`Win32Bridge`, `TrayIconManager`, `HotkeyListener`)가 모두 있어야 합니다.**
-2.  **Pet (Prefab) 설정**: 복사된 펫들이 제각각 놀게 하려면:
-    *   **이름 바꿔주기 (추천)**: 하이어라키에서 펫 오브젝트의 이름(예: `Dog_Red`, `Dog_Blue`)만 다르게 지어주면, 제가 심어놓은 **'Smart ID'** 시스템이 알아서 별도의 세이브 파일을 생성합니다.
-    *   (직접 설정 시): 각 펫의 `PetGrowthController` 컴포넌트 내 `Pet ID` 값을 고유하게 지정해도 됩니다.
-3.  **빌드 옵션**: `File > Build Settings`에서 `Standalone Windows` 플랫폼인지, `IngameScene`이 0번으로 등록되어 있는지 확인.
+### **3. 주요 진행 상황 (Working ✨)**
+*   **윈도우 시스템 통합 (Build Only)**: 
+    *   **작업표시줄 아이콘 숨기기**: 성공적으로 숨김 처리됨.
+    *   **시스템 트레이(Tray) 아이콘**: 알림 영역에 아이콘 표시 성공. (현재는 아이콘만 뜨며, 기능 연동 전 단계임)
+    *   **조치 완료**: 매니저 스크립트(`TrayIconManager`, `HotkeyListener`)를 씬의 `GlobalSystem` 오브젝트에 부착 완료.
+    *   **클릭 잠금(Click-through)**: 구현 완료 및 `Ctrl+Shift+L` 연동 준비 중.
 
 ---
 
 ## 🚀 다음 개발 가이드 (Next Assistant Start Here)
 
-1.  **로그 분석 결과**: 현재 HWND 핸들 획득(예: `853772`)까지는 성공했으나, 트레이 관리 클래스들이 아예 실행(`Start`)되지 않고 있음. 씬에 매니저 오브젝트를 배치하는 것이 급선무.
-2.  **레이블 보강**: `isClickThrough` 상태가 변할 때 윈도우 알림(Balloon Tip)이 뜨도록 `TrayIconManager.ShowNotification` 연동 필요.
+1.  **시스템 트레이 우클릭 메뉴 구현 (Top Priority)**: 현재 트레이 아이콘만 뜨고 우클릭 시 메뉴가 나오지 않는 상태입니다. `Windows API`의 `TrackPopupMenu`를 사용하여 '종료', '설정' 등의 메뉴를 구성해야 합니다.
+2.  **트레이 알림 연동**: `isClickThrough` 상태가 변할 때 윈도우 알림(Balloon Tip)이 뜨도록 `TrayIconManager.ShowNotification` 연동.
+3.  **관리 UI 고도화**: 트레이를 통해 열릴 퀵 세팅 패널 구현.
 
 ---
 
