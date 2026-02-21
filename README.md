@@ -33,7 +33,8 @@
     *   그 오브젝트에 `TrayIconManager.cs`와 `HotkeyListener.cs` 스크립트를 드래그 앤 드롭으로 추가하세요.
     *   **이제 한 오브젝트에 3개(`Win32Bridge`, `TrayIconManager`, `HotkeyListener`)가 모두 있어야 합니다.**
 2.  **Pet (Prefab) 설정**: 복사된 펫들이 제각각 놀게 하려면:
-    *   각 펫의 `PetGrowthController` 컴포넌트 내 **`Pet ID`** 값이 서로 다른지(`0`, `1`, `2`...) 확인.
+    *   **이름 바꿔주기 (추천)**: 하이어라키에서 펫 오브젝트의 이름(예: `Dog_Red`, `Dog_Blue`)만 다르게 지어주면, 제가 심어놓은 **'Smart ID'** 시스템이 알아서 별도의 세이브 파일을 생성합니다.
+    *   (직접 설정 시): 각 펫의 `PetGrowthController` 컴포넌트 내 `Pet ID` 값을 고유하게 지정해도 됩니다.
 3.  **빌드 옵션**: `File > Build Settings`에서 `Standalone Windows` 플랫폼인지, `IngameScene`이 0번으로 등록되어 있는지 확인.
 
 ---
