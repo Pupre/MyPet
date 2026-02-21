@@ -41,9 +41,14 @@ public class TrayIconManager : MonoBehaviour
 
     public void CreateTrayIcon()
     {
+        IntPtr handle = Win32Bridge.GetActiveWindow();
+        if (handle == IntPtr.Zero) handle = Win32Bridge.GetForegroundWindow();
+
+        Debug.Log($"[Tray] Attempting to create tray icon for handle: {handle}");
+
         _nid = new Win32Bridge.NOTIFYICONDATA();
         _nid.cbSize = Marshal.SizeOf(typeof(Win32Bridge.NOTIFYICONDATA));
-        _nid.hWnd = Win32Bridge.GetActiveWindow();
+        _nid.hWnd = handle;
         _nid.uID = 1;
         _nid.uFlags = Win32Bridge.NIF_ICON | Win32Bridge.NIF_TIP | Win32Bridge.NIF_MESSAGE;
         _nid.uCallbackMessage = Win32Bridge.WM_TRAYICON;
@@ -55,7 +60,10 @@ public class TrayIconManager : MonoBehaviour
         if (_isTrayIconCreated)
             Debug.Log("[Tray] 시스템 트레이 아이콘이 생성되었습니다.");
         else
-            Debug.LogError("[Tray] 트레이 아이콘 생성 고실패!");
+        {
+            int error = Marshal.GetLastWin32Error();
+            Debug.LogError($"[Tray] 트레이 아이콘 생성 실패! Error Code: {error}");
+        }
     }
 
     public void RemoveTrayIcon()

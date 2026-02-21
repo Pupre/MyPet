@@ -142,8 +142,16 @@ public class Win32Bridge : MonoBehaviour
         else Destroy(gameObject);
 
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
-        _hWnd = GetActiveWindow();
+        _hWnd = GetHWND();
+        Debug.Log($"[Win32] Awake handle: {_hWnd}");
         #endif
+    }
+
+    private IntPtr GetHWND()
+    {
+        IntPtr handle = GetActiveWindow();
+        if (handle == IntPtr.Zero) handle = GetForegroundWindow();
+        return handle;
     }
 
     public void RegisterGlobalHotkey(uint modifiers, uint key)
@@ -163,7 +171,10 @@ public class Win32Bridge : MonoBehaviour
     public void SetTransparency(bool enabled)
     {
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
-        if (enabled)
+        if (_hWnd == IntPtr.Zero) _hWnd = GetHWND();
+        Debug.Log($"[Win32] SetTransparency({enabled}) on handle: {_hWnd}");
+        
+        if (enabled && _hWnd != IntPtr.Zero)
         {
             // 스타일을 POPUP으로 변경하여 테두리 제거 (선택 사항이나 투명화에 도움됨)
             // uint style = GetWindowLong(_hWnd, -16); // GWL_STYLE
@@ -186,11 +197,12 @@ public class Win32Bridge : MonoBehaviour
     public void SetColorKey(Color32 color)
     {
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
-        // 0x00BBGGRR 형식의 COLORREF 생성
+        if (_hWnd == IntPtr.Zero) _hWnd = GetHWND();
+        Debug.Log($"[Win32] SetColorKey on handle: {_hWnd}");
+
+        if (_hWnd == IntPtr.Zero) return;
+
         uint colorRef = (uint)((color.b << 16) | (color.g << 8) | color.r);
-        
-        // 레이어드 윈도우 속성 설정 (LWA_COLORKEY)
-        // 이 함수는 해당 색상을 완전히 투명하게 만듭니다.
         SetLayeredWindowAttributes(_hWnd, colorRef, 0, LWA_COLORKEY);
         #endif
     }
@@ -226,8 +238,10 @@ public class Win32Bridge : MonoBehaviour
     public void SetTaskbarIconVisible(bool visible)
     {
         #if !UNITY_EDITOR && UNITY_STANDALONE_WIN
-        if (_hWnd == IntPtr.Zero) _hWnd = GetActiveWindow();
-        if (_hWnd == IntPtr.Zero) _hWnd = GetForegroundWindow(); // Fallback
+        if (_hWnd == IntPtr.Zero) _hWnd = GetHWND();
+        Debug.Log($"[Win32] SetTaskbarIconVisible({visible}) on handle: {_hWnd}");
+
+        if (_hWnd == IntPtr.Zero) return;
         
         uint exStyle = GetWindowLong(_hWnd, GWL_EXSTYLE);
         if (visible)
@@ -235,7 +249,6 @@ public class Win32Bridge : MonoBehaviour
         else
             SetWindowLong(_hWnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
 
-        // 프레임 변경 알림 및 스타일 갱신 강제화
         SetWindowPos(_hWnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
         #endif
     }

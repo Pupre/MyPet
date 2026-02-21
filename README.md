@@ -19,17 +19,30 @@
 
 ### **3. 미해결 과제 (Incomplete - Urgent! 🛠️)**
 *   **Phase 7: 윈도우 시스템 통합 (NOT WORKING)**
-    *   현재 시스템 트레이(Tray) 아이콘, 작업표시줄 아이콘 숨기기, 클릭 잠금(Click-through) 기능이 **빌드 환경에서도 정상 작동하지 않음**.
-    *   `Win32Bridge.cs`를 통한 창 핸들(HWND) 획득 타이밍 혹은 윈도우 스타일 변경 플래그(`SWP_FRAMECHANGED` 등)의 깊이 있는 디버깅이 필요함.
+    *   `Win32Bridge.cs`를 통한 창 핸들(HWND) 획득은 성공함(Log 확인).
+    *   **원인 규명**: `Player.log` 분석 결과 `[Tray]` 관련 로그가 전혀 없음 -> `TrayIconManager`와 `HotkeyListener` 컴포넌트가 **씬(Scene)의 어떤 오브젝트에도 붙어있지 않거나 비활성화 상태**인 것이 확실함.
     *   유니티 에디터에서는 안전을 위해 비활성화되어 있음.
 
 ---
 
-## 🚀 다음 개발 가이드
+## �️ 필수 설정 체크리스트 (새 환경에서 확인!)
 
-1.  **Win32 연동 재검토**: `TrayIconManager`와 `Win32Bridge` 사이의 HWND 공유 로직을 다시 점검하고, 빌드 시 로그를 통해 핸들값이 제대로 들어오는지 확인해야 합니다.
-2.  **단축키(`Ctrl+Shift+L`) 안정화**: 현재 글로벌 핫키가 안정적으로 인식되지 않는 문제 해결 필요.
-3.  **관리 UI 고도화**: 트레이를 통해 열릴 퀵 세팅 패널 구현.
+새로운 환경에서 프로젝트를 열었을 때, **Phase 7(트레이, 투명화)**을 작동시키려면 반드시 다음을 확인하세요:
+
+1.  **GlobalSystem 오브젝트**: `IngameScene` 내에 빈 오브젝트(예: `GlobalSystem`)를 만들고 아래 3개 컴포넌트가 모두 붙어있는지 확인하세요.
+    *   `Win32Bridge` (현재 유일하게 작동 중)
+    *   `TrayIconManager` (트레이 및 작업표시줄 숨기기 담당)
+    *   `HotkeyListener` (글로벌 단축키 담당)
+2.  **Pet (Prefab) 설정**: 복사된 펫들이 제각각 놀게 하려면:
+    *   각 펫의 `PetGrowthController` 컴포넌트 내 **`Pet ID`** 값이 서로 다른지(`0`, `1`, `2`...) 확인.
+3.  **빌드 옵션**: `File > Build Settings`에서 `Standalone Windows` 플랫폼인지, `IngameScene`이 0번으로 등록되어 있는지 확인.
+
+---
+
+## 🚀 다음 개발 가이드 (Next Assistant Start Here)
+
+1.  **로그 분석 결과**: 현재 HWND 핸들 획득(예: `853772`)까지는 성공했으나, 트레이 관리 클래스들이 아예 실행(`Start`)되지 않고 있음. 씬에 매니저 오브젝트를 배치하는 것이 급선무.
+2.  **레이블 보강**: `isClickThrough` 상태가 변할 때 윈도우 알림(Balloon Tip)이 뜨도록 `TrayIconManager.ShowNotification` 연동 필요.
 
 ---
 
