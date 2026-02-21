@@ -19,6 +19,13 @@ public class PetGrowthController : MonoBehaviour
 
     void Awake()
     {
+        // ID가 설정되어 있지 않거나 기본값인 경우, 하이어라키의 오브젝트 이름을 고유 ID로 사용합니다.
+        // 이를 통해 하이어라키에서 펫 이름을 다르게(예: Dog1, Dog2) 지어주는 것만으로 개별 저장이 가능해집니다.
+        if (string.IsNullOrEmpty(petID) || petID == "0")
+        {
+            petID = gameObject.name;
+        }
+
         _visualManager = GetComponent<PetVisualManager>();
         _needsController = GetComponent<PetNeedsController>();
         LoadPetData();

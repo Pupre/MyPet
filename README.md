@@ -29,10 +29,9 @@
 
 새로운 환경에서 프로젝트를 열었을 때, **Phase 7(트레이, 투명화)**을 작동시키려면 반드시 다음을 확인하세요:
 
-1.  **GlobalSystem 오브젝트**: `IngameScene` 내에 빈 오브젝트(예: `GlobalSystem`)를 만들고 아래 3개 컴포넌트가 모두 붙어있는지 확인하세요.
-    *   `Win32Bridge` (현재 유일하게 작동 중)
-    *   `TrayIconManager` (트레이 및 작업표시줄 숨기기 담당)
-    *   `HotkeyListener` (글로벌 단축키 담당)
+1.  **GlobalSystem 오브젝트 (Hierarchy)**: `IngameScene` 내에서 이미 `Win32Bridge`가 붙어있는 오브젝트를 찾으세요. (아마 `GlobalSystem` 혹은 `Win32Bridge`라는 이름일 것입니다.)
+    *   그 오브젝트에 `TrayIconManager.cs`와 `HotkeyListener.cs` 스크립트를 드래그 앤 드롭으로 추가하세요.
+    *   **이제 한 오브젝트에 3개(`Win32Bridge`, `TrayIconManager`, `HotkeyListener`)가 모두 있어야 합니다.**
 2.  **Pet (Prefab) 설정**: 복사된 펫들이 제각각 놀게 하려면:
     *   각 펫의 `PetGrowthController` 컴포넌트 내 **`Pet ID`** 값이 서로 다른지(`0`, `1`, `2`...) 확인.
 3.  **빌드 옵션**: `File > Build Settings`에서 `Standalone Windows` 플랫폼인지, `IngameScene`이 0번으로 등록되어 있는지 확인.
